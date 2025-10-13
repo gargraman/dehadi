@@ -2,6 +2,7 @@ import { LocationOn, Work, AccessTime } from '@mui/icons-material';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { getWorkTypeImage } from '@/lib/workTypeImages';
 
 interface JobCardProps {
   id: string;
@@ -29,9 +30,28 @@ export default function JobCard({
   headcount,
 }: JobCardProps) {
   const wageLabel = wageType === 'daily' ? '/day' : wageType === 'hourly' ? '/hour' : '';
+  const workImage = getWorkTypeImage(title);
 
   return (
-    <Card className="hover-elevate active-elevate-2" data-testid={`job-card-${id}`}>
+    <Card className="hover-elevate active-elevate-2 overflow-hidden" data-testid={`job-card-${id}`}>
+      {/* Work Type Image */}
+      <div className="relative h-40 overflow-hidden bg-muted">
+        <img 
+          src={workImage} 
+          alt={title}
+          className="w-full h-full object-cover"
+          data-testid={`job-image-${id}`}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+        <Badge 
+          variant="secondary" 
+          className="absolute top-3 right-3 bg-chart-3 text-white font-semibold px-3" 
+          data-testid={`wage-${id}`}
+        >
+          ₹{wage}{wageLabel}
+        </Badge>
+      </div>
+
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
@@ -42,9 +62,6 @@ export default function JobCard({
               {employer}
             </p>
           </div>
-          <Badge variant="secondary" className="shrink-0 bg-chart-3 text-white font-semibold px-3" data-testid={`wage-${id}`}>
-            ₹{wage}{wageLabel}
-          </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">

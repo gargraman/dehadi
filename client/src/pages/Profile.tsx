@@ -1,8 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { 
   Edit, 
   Verified, 
@@ -11,7 +21,9 @@ import {
   LocationOn,
   Language,
   Brightness4,
-  ExitToApp
+  ExitToApp,
+  CreditCard,
+  MyLocation
 } from '@mui/icons-material';
 
 const mockUserProfile = {
@@ -28,17 +40,48 @@ const mockUserProfile = {
   languages: ['Hindi', 'Marathi', 'English'],
 };
 
+const languages = [
+  { code: 'en', name: 'English', native: 'English' },
+  { code: 'hi', name: 'Hindi', native: 'हिंदी' },
+  { code: 'bn', name: 'Bengali', native: 'বাংলা' },
+  { code: 'te', name: 'Telugu', native: 'తెలుగు' },
+  { code: 'mr', name: 'Marathi', native: 'मराठी' },
+  { code: 'ta', name: 'Tamil', native: 'தமிழ்' },
+  { code: 'gu', name: 'Gujarati', native: 'ગુજરાતી' },
+  { code: 'kn', name: 'Kannada', native: 'ಕನ್ನಡ' },
+  { code: 'ml', name: 'Malayalam', native: 'മലയാളം' },
+  { code: 'pa', name: 'Punjabi', native: 'ਪੰਜਾਬੀ' },
+];
+
 const menuItems = [
   { icon: Edit, label: 'Edit Profile', action: 'edit' },
   { icon: Work, label: 'Work History', action: 'history' },
   { icon: Star, label: 'Reviews & Ratings', action: 'reviews' },
-  { icon: Language, label: 'Language', action: 'language' },
   { icon: Brightness4, label: 'Dark Mode', action: 'darkmode', hasToggle: true },
   { icon: ExitToApp, label: 'Logout', action: 'logout', isDanger: true },
 ];
 
+interface OnboardingData {
+  language: string;
+  location: string;
+  aadhar: string;
+  completedAt: string;
+}
+
 export default function Profile() {
   const [darkMode, setDarkMode] = useState(false);
+  const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editField, setEditField] = useState<'language' | 'location' | 'aadhar' | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [isLocating, setIsLocating] = useState(false);
+
+  useEffect(() => {
+    const data = localStorage.getItem('onboardingData');
+    if (data) {
+      setOnboardingData(JSON.parse(data));
+    }
+  }, []);
 
   const handleMenuAction = (action: string) => {
     if (action === 'darkmode') {
@@ -46,6 +89,50 @@ export default function Profile() {
       document.documentElement.classList.toggle('dark');
     }
     console.log('Menu action:', action);
+  };
+
+  const handleEditClick = (field: 'language' | 'location' | 'aadhar', currentValue: string) => {
+    setEditField(field);
+    setEditValue(currentValue);
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (onboardingData && editField) {
+      const updatedData = {
+        ...onboardingData,
+        [editField]: editValue,
+      };
+      localStorage.setItem('onboardingData', JSON.stringify(updatedData));
+      setOnboardingData(updatedData);
+      setEditDialogOpen(false);
+      setEditField(null);
+      setEditValue('');
+    }
+  };
+
+  const handleLocateMe = () => {
+    setIsLocating(true);
+    setTimeout(() => {
+      setEditValue('Andheri West, Mumbai, Maharashtra');
+      setIsLocating(false);
+    }, 1500);
+  };
+
+  const formatAadhar = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    const limited = numbers.slice(0, 12);
+    return limited.replace(/(\d{4})(?=\d)/g, '$1 ');
+  };
+
+  const maskAadhar = (aadhar: string) => {
+    if (!aadhar) return '';
+    return `XXXX XXXX ${aadhar.slice(-4)}`;
+  };
+
+  const getLanguageName = (code: string) => {
+    const lang = languages.find(l => l.code === code);
+    return lang ? `${lang.native} (${lang.name})` : code;
   };
 
   return (
@@ -129,6 +216,93 @@ export default function Profile() {
         </Card>
       </div>
 
+      {/* Onboarding Information */}
+      {onboardingData ? (
+        <div className="px-4 pb-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Account Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* Language */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div className="flex items-center gap-3">
+                  <Language sx={{ fontSize: 20 }} className="text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Language</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {getLanguageName(onboardingData.language)}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEditClick('language', onboardingData.language)}
+                  data-testid="button-edit-language"
+                >
+                  <Edit sx={{ fontSize: 18 }} />
+                </Button>
+              </div>
+
+              {/* Location */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div className="flex items-center gap-3">
+                  <LocationOn sx={{ fontSize: 20 }} className="text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Location</p>
+                    <p className="text-sm font-medium text-foreground">{onboardingData.location}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEditClick('location', onboardingData.location)}
+                  data-testid="button-edit-location"
+                >
+                  <Edit sx={{ fontSize: 18 }} />
+                </Button>
+              </div>
+
+              {/* Aadhar */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div className="flex items-center gap-3">
+                  <CreditCard sx={{ fontSize: 20 }} className="text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Aadhar Number</p>
+                    <p className="text-sm font-medium text-foreground font-mono">
+                      {maskAadhar(onboardingData.aadhar)}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEditClick('aadhar', onboardingData.aadhar)}
+                  data-testid="button-edit-aadhar"
+                >
+                  <Edit sx={{ fontSize: 18 }} />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <div className="px-4 pb-4">
+          <Card>
+            <CardContent className="py-8 text-center">
+              <p className="text-muted-foreground mb-3">Complete onboarding to set up your profile</p>
+              <Button
+                onClick={() => window.location.href = '/onboarding'}
+                data-testid="button-start-onboarding"
+              >
+                Complete Setup
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Menu Items */}
       <div className="px-4 pb-4 space-y-2">
         {menuItems.map((item) => {
@@ -157,6 +331,112 @@ export default function Profile() {
           );
         })}
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Edit {editField === 'language' ? 'Language' : editField === 'location' ? 'Location' : 'Aadhar Number'}
+            </DialogTitle>
+            <DialogDescription>
+              Update your {editField === 'language' ? 'preferred language' : editField === 'location' ? 'current location' : 'Aadhar information'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {editField === 'language' && (
+              <div className="grid grid-cols-2 gap-2 max-h-80 overflow-y-auto">
+                {languages.map((lang) => (
+                  <button
+                    key={lang.code}
+                    onClick={() => setEditValue(lang.code)}
+                    className={`p-3 rounded-lg border-2 transition-all text-left ${
+                      editValue === lang.code
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border bg-card'
+                    }`}
+                    data-testid={`edit-language-${lang.code}`}
+                  >
+                    <div className="text-base mb-0.5">{lang.native}</div>
+                    <div className={`text-xs ${
+                      editValue === lang.code ? 'text-primary font-medium' : 'text-muted-foreground'
+                    }`}>
+                      {lang.name}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {editField === 'location' && (
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="edit-location">Location</Label>
+                  <Input
+                    id="edit-location"
+                    type="text"
+                    placeholder="City, Area, State"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    className="mt-2"
+                    data-testid="input-edit-location"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={handleLocateMe}
+                  disabled={isLocating}
+                  className="w-full"
+                  data-testid="button-edit-use-location"
+                >
+                  <MyLocation sx={{ fontSize: 20 }} className="mr-2" />
+                  {isLocating ? 'Getting location...' : 'Use Current Location'}
+                </Button>
+              </div>
+            )}
+
+            {editField === 'aadhar' && (
+              <div>
+                <Label htmlFor="edit-aadhar">Aadhar Number</Label>
+                <Input
+                  id="edit-aadhar"
+                  type="text"
+                  placeholder="XXXX XXXX XXXX"
+                  value={formatAadhar(editValue)}
+                  onChange={(e) => setEditValue(e.target.value.replace(/\s/g, ''))}
+                  className="mt-2 tracking-wider font-mono"
+                  data-testid="input-edit-aadhar"
+                  maxLength={14}
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Your Aadhar information is secure and encrypted
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditDialogOpen(false)}
+              data-testid="button-cancel-edit"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              disabled={
+                !editValue ||
+                (editField === 'aadhar' && editValue.length !== 12)
+              }
+              data-testid="button-save-edit"
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

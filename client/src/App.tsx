@@ -1,4 +1,5 @@
-import { Switch, Route } from "wouter";
+import { useEffect } from "react";
+import { Switch, Route, useLocation, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,29 +11,63 @@ import Nearby from "@/pages/Nearby";
 import Messages from "@/pages/Messages";
 import Profile from "@/pages/Profile";
 import Dashboard from "@/pages/Dashboard";
+import Onboarding from "@/pages/Onboarding";
 import NotFound from "@/pages/not-found";
+
+function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  const [, setLocation] = useLocation();
+  const onboardingData = localStorage.getItem('onboardingData');
+
+  useEffect(() => {
+    if (!onboardingData) {
+      setLocation('/onboarding');
+    }
+  }, [onboardingData, setLocation]);
+
+  if (!onboardingData) {
+    return null;
+  }
+
+  return <Component />;
+}
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/search" component={Search} />
-      <Route path="/nearby" component={Nearby} />
-      <Route path="/messages" component={Messages} />
-      <Route path="/profile" component={Profile} />
-      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/onboarding" component={Onboarding} />
+      <Route path="/">
+        {() => <ProtectedRoute component={Home} />}
+      </Route>
+      <Route path="/search">
+        {() => <ProtectedRoute component={Search} />}
+      </Route>
+      <Route path="/nearby">
+        {() => <ProtectedRoute component={Nearby} />}
+      </Route>
+      <Route path="/messages">
+        {() => <ProtectedRoute component={Messages} />}
+      </Route>
+      <Route path="/profile">
+        {() => <ProtectedRoute component={Profile} />}
+      </Route>
+      <Route path="/dashboard">
+        {() => <ProtectedRoute component={Dashboard} />}
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
 }
 
 function App() {
+  const [location] = useLocation();
+  const hideNavigation = location === '/onboarding';
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <div className="relative">
           <Router />
-          <BottomNavigation />
+          {!hideNavigation && <BottomNavigation />}
         </div>
         <Toaster />
       </TooltipProvider>
