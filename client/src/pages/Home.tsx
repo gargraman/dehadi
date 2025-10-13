@@ -132,6 +132,7 @@ export default function Home() {
                     skills={job.skills || []}
                     postedTime={formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
                     headcount={job.headcount || undefined}
+                    status={job.status}
                   />
                 ))}
               </>
@@ -161,6 +162,7 @@ export default function Home() {
                     skills={job.skills || []}
                     postedTime={formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
                     headcount={job.headcount || undefined}
+                    status={job.status}
                   />
                 ))}
               </>

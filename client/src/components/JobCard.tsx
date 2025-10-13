@@ -1,5 +1,14 @@
 import { useLocation } from 'wouter';
-import { LocationOn, Work, AccessTime } from '@mui/icons-material';
+import { 
+  LocationOn, 
+  Work, 
+  AccessTime,
+  PlayArrow,
+  Payment,
+  CheckCircle,
+  Done,
+  Cancel 
+} from '@mui/icons-material';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +25,45 @@ interface JobCardProps {
   skills: string[];
   postedTime: string;
   headcount?: number;
+  status?: string;
+}
+
+// Get status icon and color based on job status
+function getStatusBadge(status: string) {
+  const statusMap: Record<string, { icon: JSX.Element; label: string; variant: 'default' | 'secondary' | 'outline' }> = {
+    open: { 
+      icon: <Work sx={{ fontSize: 16 }} />, 
+      label: 'Open', 
+      variant: 'default' 
+    },
+    in_progress: { 
+      icon: <PlayArrow sx={{ fontSize: 16 }} />, 
+      label: 'In Progress', 
+      variant: 'default' 
+    },
+    awaiting_payment: { 
+      icon: <Payment sx={{ fontSize: 16 }} />, 
+      label: 'Awaiting Payment', 
+      variant: 'secondary' 
+    },
+    paid: { 
+      icon: <CheckCircle sx={{ fontSize: 16 }} />, 
+      label: 'Paid', 
+      variant: 'default' 
+    },
+    completed: { 
+      icon: <Done sx={{ fontSize: 16 }} />, 
+      label: 'Completed', 
+      variant: 'default' 
+    },
+    cancelled: { 
+      icon: <Cancel sx={{ fontSize: 16 }} />, 
+      label: 'Cancelled', 
+      variant: 'outline' 
+    },
+  };
+
+  return statusMap[status] || statusMap.open;
 }
 
 export default function JobCard({
@@ -29,10 +77,12 @@ export default function JobCard({
   skills,
   postedTime,
   headcount,
+  status = 'open',
 }: JobCardProps) {
   const [, navigate] = useLocation();
   const wageLabel = wageType === 'daily' ? '/day' : wageType === 'hourly' ? '/hour' : '';
   const workImage = getWorkTypeImage(title);
+  const statusInfo = getStatusBadge(status);
 
   return (
     <Card 
@@ -56,6 +106,16 @@ export default function JobCard({
         >
           ₹{wage}{wageLabel}
         </Badge>
+        {status !== 'open' && (
+          <Badge 
+            variant={statusInfo.variant}
+            className="absolute top-3 left-3 bg-background/90 backdrop-blur-sm flex items-center gap-1" 
+            data-testid={`status-${id}`}
+          >
+            {statusInfo.icon}
+            <span>{statusInfo.label}</span>
+          </Badge>
+        )}
       </div>
 
       <CardHeader className="pb-3">
