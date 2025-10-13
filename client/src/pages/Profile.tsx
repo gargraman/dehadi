@@ -25,6 +25,7 @@ import {
   CreditCard,
   MyLocation
 } from '@mui/icons-material';
+import { Hammer, Zap, Droplets, Wrench, Paintbrush, HandHelping, Car, Sparkles, ChefHat, Shield } from 'lucide-react';
 
 const mockUserProfile = {
   name: 'Ramesh Kumar',
@@ -53,6 +54,19 @@ const languages = [
   { code: 'pa', name: 'Punjabi', native: 'ਪੰਜਾਬੀ' },
 ];
 
+const skillCategories = [
+  { id: 'mason', name: 'Mason', icon: Hammer, color: 'text-orange-500' },
+  { id: 'electrician', name: 'Electrician', icon: Zap, color: 'text-yellow-500' },
+  { id: 'plumber', name: 'Plumber', icon: Droplets, color: 'text-blue-500' },
+  { id: 'carpenter', name: 'Carpenter', icon: Wrench, color: 'text-amber-600' },
+  { id: 'painter', name: 'Painter', icon: Paintbrush, color: 'text-purple-500' },
+  { id: 'helper', name: 'Helper/Labor', icon: HandHelping, color: 'text-green-500' },
+  { id: 'driver', name: 'Driver', icon: Car, color: 'text-red-500' },
+  { id: 'cleaner', name: 'Cleaner', icon: Sparkles, color: 'text-cyan-500' },
+  { id: 'cook', name: 'Cook', icon: ChefHat, color: 'text-pink-500' },
+  { id: 'security', name: 'Security', icon: Shield, color: 'text-indigo-500' },
+];
+
 const menuItems = [
   { icon: Edit, label: 'Edit Profile', action: 'edit' },
   { icon: Work, label: 'Work History', action: 'history' },
@@ -64,6 +78,7 @@ const menuItems = [
 interface OnboardingData {
   language: string;
   location: string;
+  skills: string[];
   aadhar: string;
   completedAt: string;
 }
@@ -72,8 +87,9 @@ export default function Profile() {
   const [darkMode, setDarkMode] = useState(false);
   const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editField, setEditField] = useState<'language' | 'location' | 'aadhar' | null>(null);
+  const [editField, setEditField] = useState<'language' | 'location' | 'skills' | 'aadhar' | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [isLocating, setIsLocating] = useState(false);
 
   useEffect(() => {
@@ -101,13 +117,14 @@ export default function Profile() {
     if (onboardingData && editField) {
       const updatedData = {
         ...onboardingData,
-        [editField]: editValue,
+        [editField]: editField === 'skills' ? selectedSkills : editValue,
       };
       localStorage.setItem('onboardingData', JSON.stringify(updatedData));
       setOnboardingData(updatedData);
       setEditDialogOpen(false);
       setEditField(null);
       setEditValue('');
+      setSelectedSkills([]);
     }
   };
 
@@ -264,6 +281,41 @@ export default function Profile() {
                 </Button>
               </div>
 
+              {/* Skills */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Work sx={{ fontSize: 20 }} className="text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground">Skills</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 ml-8">
+                    {onboardingData.skills.map((skillId) => {
+                      const skill = skillCategories.find(s => s.id === skillId);
+                      if (!skill) return null;
+                      const Icon = skill.icon;
+                      return (
+                        <Badge key={skillId} variant="secondary" className="gap-1">
+                          <Icon className={`w-3 h-3 ${skill.color}`} />
+                          <span>{skill.name}</span>
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedSkills(onboardingData.skills);
+                    setEditField('skills');
+                    setEditDialogOpen(true);
+                  }}
+                  data-testid="button-edit-skills"
+                >
+                  <Edit sx={{ fontSize: 18 }} />
+                </Button>
+              </div>
+
               {/* Aadhar */}
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-3">
@@ -337,10 +389,10 @@ export default function Profile() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Edit {editField === 'language' ? 'Language' : editField === 'location' ? 'Location' : 'Aadhar Number'}
+              Edit {editField === 'language' ? 'Language' : editField === 'location' ? 'Location' : editField === 'skills' ? 'Skills' : 'Aadhar Number'}
             </DialogTitle>
             <DialogDescription>
-              Update your {editField === 'language' ? 'preferred language' : editField === 'location' ? 'current location' : 'Aadhar information'}
+              Update your {editField === 'language' ? 'preferred language' : editField === 'location' ? 'current location' : editField === 'skills' ? 'work skills' : 'Aadhar information'}
             </DialogDescription>
           </DialogHeader>
 
@@ -396,6 +448,55 @@ export default function Profile() {
               </div>
             )}
 
+            {editField === 'skills' && (
+              <div>
+                <div className="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto">
+                  {skillCategories.map((skill) => {
+                    const Icon = skill.icon;
+                    const isSelected = selectedSkills.includes(skill.id);
+                    return (
+                      <button
+                        key={skill.id}
+                        onClick={() => {
+                          setSelectedSkills(prev => 
+                            prev.includes(skill.id) 
+                              ? prev.filter(id => id !== skill.id)
+                              : [...prev, skill.id]
+                          );
+                        }}
+                        className={`p-3 rounded-lg border-2 transition-all hover-elevate active-elevate-2 ${
+                          isSelected
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border bg-card'
+                        }`}
+                        data-testid={`edit-skill-${skill.id}`}
+                      >
+                        <div className="flex flex-col items-center gap-2">
+                          <div className={`p-2 rounded-full ${
+                            isSelected ? 'bg-primary/20' : 'bg-muted'
+                          }`}>
+                            <Icon className={`w-5 h-5 ${
+                              isSelected ? 'text-primary' : skill.color
+                            }`} />
+                          </div>
+                          <span className={`text-sm font-medium text-center ${
+                            isSelected ? 'text-primary' : 'text-foreground'
+                          }`}>
+                            {skill.name}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedSkills.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-3">
+                    {selectedSkills.length} skill{selectedSkills.length > 1 ? 's' : ''} selected
+                  </p>
+                )}
+              </div>
+            )}
+
             {editField === 'aadhar' && (
               <div>
                 <Label htmlFor="edit-aadhar">Aadhar Number</Label>
@@ -427,8 +528,9 @@ export default function Profile() {
             <Button
               onClick={handleSaveEdit}
               disabled={
-                !editValue ||
-                (editField === 'aadhar' && editValue.length !== 12)
+                editField === 'skills' 
+                  ? selectedSkills.length === 0
+                  : !editValue || (editField === 'aadhar' && editValue.length !== 12)
               }
               data-testid="button-save-edit"
             >

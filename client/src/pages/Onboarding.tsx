@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { MyLocation, ArrowForward, Check } from '@mui/icons-material';
-import { Hammer, Zap, Droplets, Saw, Paintbrush, HandHelping, Car, Sparkles, ChefHat, Shield } from 'lucide-react';
+import { Hammer, Zap, Droplets, Wrench, Paintbrush, HandHelping, Car, Sparkles, ChefHat, Shield } from 'lucide-react';
 
 const languages = [
   { code: 'en', name: 'English', native: 'English' },
@@ -24,7 +24,7 @@ const skillCategories = [
   { id: 'mason', name: 'Mason', icon: Hammer, color: 'text-orange-500' },
   { id: 'electrician', name: 'Electrician', icon: Zap, color: 'text-yellow-500' },
   { id: 'plumber', name: 'Plumber', icon: Droplets, color: 'text-blue-500' },
-  { id: 'carpenter', name: 'Carpenter', icon: Saw, color: 'text-amber-600' },
+  { id: 'carpenter', name: 'Carpenter', icon: Wrench, color: 'text-amber-600' },
   { id: 'painter', name: 'Painter', icon: Paintbrush, color: 'text-purple-500' },
   { id: 'helper', name: 'Helper/Labor', icon: HandHelping, color: 'text-green-500' },
   { id: 'driver', name: 'Driver', icon: Car, color: 'text-red-500' },
