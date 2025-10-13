@@ -33,6 +33,25 @@ const verifyPaymentSchema = z.object({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Health check endpoint for load balancers and monitoring
+  app.get("/api/health", async (req, res) => {
+    try {
+      // Check database connectivity
+      await storage.getJobs({ status: "open" });
+      res.status(200).json({ 
+        status: "healthy", 
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || "development"
+      });
+    } catch (error) {
+      res.status(503).json({ 
+        status: "unhealthy", 
+        error: "Database connection failed",
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+  
   // Job routes
   app.get("/api/jobs", async (req, res) => {
     try {

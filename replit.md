@@ -226,3 +226,148 @@ Preferred communication style: Simple, everyday language.
 - **TanStack Query** (React Query) - Server state management
 - Native Fetch API for HTTP requests
 - Custom `apiRequest` wrapper with error handling
+
+## Deployment
+
+### Deployment Options
+
+The application supports multiple deployment strategies:
+
+1. **Replit Deployment** (Native)
+   - One-click deployment within Replit platform
+   - Automatic environment configuration
+   - Built-in database and object storage
+   - Access via `.replit.app` domain or custom domain
+
+2. **Docker Deployment**
+   - Containerized application for portability
+   - Multi-stage build for optimized image size
+   - Docker Compose for local development with PostgreSQL
+   - Compatible with any Docker-capable hosting platform
+
+3. **Cloud Deployment (AWS)**
+   - AWS ECS Fargate for serverless containers
+   - AWS RDS PostgreSQL for managed database
+   - Application Load Balancer for high availability
+   - Auto-scaling based on traffic
+   - Alternative options: Elastic Beanstalk, EC2
+
+### Deployment Files
+
+**Core Files:**
+- `Dockerfile` - Multi-stage build for production deployment
+- `docker-compose.yml` - Local development environment with PostgreSQL
+- `.dockerignore` - Optimizes Docker build performance
+- `.env.example` - Template for environment variables
+- `init-db.sql` - Database initialization script
+
+**CI/CD:**
+- `.github/workflows/deploy-aws.yml` - GitHub Actions pipeline for AWS ECS
+- Automated build, test, and deployment workflow
+- Vulnerability scanning with Trivy
+- Automatic rollback on deployment failure
+
+**Documentation:**
+- `README-DEPLOY.md` - Comprehensive deployment guide
+  - Local development setup
+  - Docker deployment instructions
+  - AWS deployment (ECS, Elastic Beanstalk, EC2)
+  - Environment configuration
+  - Database migrations
+  - Troubleshooting guide
+
+### Environment Variables
+
+**Required for Production:**
+- `DATABASE_URL` - PostgreSQL connection string
+- `RAZORPAY_KEY_ID` - Payment gateway API key
+- `RAZORPAY_KEY_SECRET` - Payment gateway secret
+- `SESSION_SECRET` - Express session encryption key
+- `NODE_ENV` - Set to "production"
+
+**Optional:**
+- `OPENAI_API_KEY` - AI features
+- `DEFAULT_OBJECT_STORAGE_BUCKET_ID` - S3/Object storage
+- `AWS_*` - AWS service credentials
+
+### Health Check Endpoint
+
+`GET /api/health` - Returns application and database health status
+- Used by load balancers and monitoring systems
+- Validates database connectivity
+- Returns HTTP 200 for healthy, 503 for unhealthy
+
+### Local Development
+
+```bash
+# With Docker Compose
+docker-compose up -d
+
+# Without Docker
+npm install
+npm run db:push
+npm run dev
+```
+
+### Production Deployment
+
+```bash
+# Docker
+docker build -t dehadi-app:latest .
+docker run -p 5000:5000 --env-file .env.production dehadi-app:latest
+
+# AWS ECS (via GitHub Actions)
+git push origin main  # Triggers automatic deployment
+```
+
+### Database Migrations
+
+Using Drizzle ORM:
+```bash
+# Push schema to database
+npm run db:push
+
+# Force push (if needed)
+npm run db:push --force
+```
+
+### Security Considerations
+
+- All sensitive data stored in environment variables
+- AWS Secrets Manager for production secrets
+- SSL/TLS required for production deployments
+- Regular security updates and vulnerability scanning
+- Rate limiting and DDoS protection recommended
+- Database encryption at rest and in transit
+
+### Scaling Strategy
+
+- **Horizontal scaling**: Multiple ECS tasks behind load balancer
+- **Database scaling**: RDS read replicas for read-heavy workloads
+- **Caching**: CloudFront CDN for static assets
+- **Auto-scaling**: Based on CPU/memory metrics
+
+### Cost Optimization
+
+- Use Fargate Spot for non-critical tasks (~70% savings)
+- RDS Reserved Instances for production database (~40% savings)
+- S3 Intelligent-Tiering for object storage
+- CloudWatch log retention policies
+- Auto-scaling to minimize idle resources
+
+### Monitoring & Observability
+
+- **Health checks**: Application and database connectivity
+- **Logs**: CloudWatch Logs (AWS) or container logs (Docker)
+- **Metrics**: CPU, memory, request count, response times
+- **Alerts**: High CPU, failed health checks, error rates
+- **Tracing**: Support for distributed tracing (AWS X-Ray)
+
+## Recent Changes
+
+### Payment System Enhancement (January 2025)
+- Implemented atomic database transactions for payment completion
+- Added comprehensive job lifecycle validations
+- Fixed critical payment verification security vulnerability
+- Enhanced error handling with detailed server messages
+- Added health check endpoint for deployment monitoring
