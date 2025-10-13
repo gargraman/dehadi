@@ -78,7 +78,7 @@ const menuItems = [
 interface OnboardingData {
   language: string;
   location: string;
-  skills: string[];
+  skills?: string[];
   aadhar: string;
   completedAt: string;
 }
@@ -92,10 +92,45 @@ export default function Profile() {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [isLocating, setIsLocating] = useState(false);
 
+  // Normalize legacy skill data to new ID format
+  const normalizeSkills = (skills: string[] | undefined): string[] => {
+    if (!skills || skills.length === 0) return [];
+    
+    return skills
+      .map(skill => {
+        // If already an ID (lowercase), return as-is
+        if (skillCategories.find(s => s.id === skill)) {
+          return skill;
+        }
+        // Try to map legacy skill name to new ID (case-insensitive)
+        const matchingSkill = skillCategories.find(
+          s => s.name.toLowerCase() === skill.toLowerCase() || 
+               s.id === skill.toLowerCase()
+        );
+        return matchingSkill?.id;
+      })
+      .filter((skill): skill is string => skill !== undefined);
+  };
+
   useEffect(() => {
     const data = localStorage.getItem('onboardingData');
     if (data) {
-      setOnboardingData(JSON.parse(data));
+      const parsedData = JSON.parse(data);
+      
+      // Normalize skills if present
+      if (parsedData.skills) {
+        const normalizedSkills = normalizeSkills(parsedData.skills);
+        if (JSON.stringify(normalizedSkills) !== JSON.stringify(parsedData.skills)) {
+          // Update localStorage with normalized data
+          const updatedData = { ...parsedData, skills: normalizedSkills };
+          localStorage.setItem('onboardingData', JSON.stringify(updatedData));
+          setOnboardingData(updatedData);
+        } else {
+          setOnboardingData(parsedData);
+        }
+      } else {
+        setOnboardingData(parsedData);
+      }
     }
   }, []);
 
@@ -107,9 +142,13 @@ export default function Profile() {
     console.log('Menu action:', action);
   };
 
-  const handleEditClick = (field: 'language' | 'location' | 'aadhar', currentValue: string) => {
+  const handleEditClick = (field: 'language' | 'location' | 'skills' | 'aadhar', currentValue: string | string[]) => {
     setEditField(field);
-    setEditValue(currentValue);
+    if (field === 'skills') {
+      setSelectedSkills(currentValue as string[]);
+    } else {
+      setEditValue(currentValue as string);
+    }
     setEditDialogOpen(true);
   };
 
@@ -289,27 +328,31 @@ export default function Profile() {
                     <p className="text-xs text-muted-foreground">Skills</p>
                   </div>
                   <div className="flex flex-wrap gap-2 ml-8">
-                    {onboardingData.skills.map((skillId) => {
-                      const skill = skillCategories.find(s => s.id === skillId);
-                      if (!skill) return null;
-                      const Icon = skill.icon;
-                      return (
-                        <Badge key={skillId} variant="secondary" className="gap-1">
-                          <Icon className={`w-3 h-3 ${skill.color}`} />
-                          <span>{skill.name}</span>
-                        </Badge>
+                    {(() => {
+                      const skills = (onboardingData.skills || [])
+                        .map((skillId) => {
+                          const skill = skillCategories.find(s => s.id === skillId);
+                          if (!skill) return null;
+                          const Icon = skill.icon;
+                          return (
+                            <Badge key={skillId} variant="secondary" className="gap-1">
+                              <Icon className={`w-3 h-3 ${skill.color}`} />
+                              <span>{skill.name}</span>
+                            </Badge>
+                          );
+                        })
+                        .filter(badge => badge !== null);
+                      
+                      return skills.length > 0 ? skills : (
+                        <p className="text-sm text-muted-foreground">No skills added yet</p>
                       );
-                    })}
+                    })()}
                   </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    setSelectedSkills(onboardingData.skills);
-                    setEditField('skills');
-                    setEditDialogOpen(true);
-                  }}
+                  onClick={() => handleEditClick('skills', onboardingData.skills || [])}
                   data-testid="button-edit-skills"
                 >
                   <Edit sx={{ fontSize: 18 }} />
