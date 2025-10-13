@@ -247,10 +247,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid payment signature" });
       }
 
-      // Find payment by order ID - access private field via type assertion
-      const memStorage = storage as any;
-      const payments = Array.from(memStorage.payments.values()) as Payment[];
-      const payment = payments.find(p => p.razorpayOrderId === razorpayOrderId);
+      // Find payment by order ID using storage interface
+      const payment = await storage.getPaymentByOrderId(razorpayOrderId);
       
       if (!payment) {
         return res.status(404).json({ message: "Payment not found" });

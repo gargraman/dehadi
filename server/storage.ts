@@ -47,6 +47,7 @@ export interface IStorage {
   // Payment methods
   getPayment(id: string): Promise<Payment | undefined>;
   getPaymentForJob(jobId: string): Promise<Payment | undefined>;
+  getPaymentByOrderId(razorpayOrderId: string): Promise<Payment | undefined>;
   createPayment(payment: InsertPayment): Promise<Payment>;
   updatePaymentStatus(id: string, status: string, razorpayPaymentId?: string, razorpaySignature?: string): Promise<Payment | undefined>;
 }
@@ -239,6 +240,10 @@ export class MemStorage implements IStorage {
     return Array.from(this.payments.values()).find(payment => payment.jobId === jobId);
   }
 
+  async getPaymentByOrderId(razorpayOrderId: string): Promise<Payment | undefined> {
+    return Array.from(this.payments.values()).find(payment => payment.razorpayOrderId === razorpayOrderId);
+  }
+
   async createPayment(insertPayment: InsertPayment): Promise<Payment> {
     const id = randomUUID();
     const payment: Payment = {
@@ -419,6 +424,11 @@ export class DatabaseStorage implements IStorage {
 
   async getPaymentForJob(jobId: string): Promise<Payment | undefined> {
     const result = await db.select().from(payments).where(eq(payments.jobId, jobId)).limit(1);
+    return result[0];
+  }
+
+  async getPaymentByOrderId(razorpayOrderId: string): Promise<Payment | undefined> {
+    const result = await db.select().from(payments).where(eq(payments.razorpayOrderId, razorpayOrderId)).limit(1);
     return result[0];
   }
 
