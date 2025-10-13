@@ -44,6 +44,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         environment: process.env.NODE_ENV || "development"
       });
     } catch (error) {
+      // Log health check failure for monitoring and debugging
+      console.error("Health check failed - Database connectivity issue", {
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      
       res.status(503).json({ 
         status: "unhealthy", 
         error: "Database connection failed",
