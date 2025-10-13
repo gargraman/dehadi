@@ -1,52 +1,64 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { formatDistanceToNow } from 'date-fns';
 import SearchBar from '@/components/SearchBar';
 import JobCard from '@/components/JobCard';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { Notifications } from '@mui/icons-material';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { Job } from '@shared/schema';
 
-// Mock data
-const mockJobs = [
-  {
-    id: '1',
-    title: 'Mason (Brick, Block, Plaster)',
-    employer: 'ABC Construction Pvt Ltd',
-    location: 'Andheri West, Mumbai',
-    distance: '2.3 km away',
-    wageType: 'daily' as const,
-    wage: '850',
-    skills: ['Brick Laying', 'Plastering', 'Block Work'],
-    postedTime: '2 hours ago',
-    headcount: 3,
-  },
-  {
-    id: '2',
-    title: 'Electrician',
-    employer: 'Metro Builders',
-    location: 'Powai, Mumbai',
-    distance: '5.1 km away',
-    wageType: 'daily' as const,
-    wage: '1200',
-    skills: ['Wiring', 'Panel Installation', 'Troubleshooting', 'Safety Certified'],
-    postedTime: '1 day ago',
-  },
-  {
-    id: '3',
-    title: 'Plumber',
-    employer: 'City Projects Ltd',
-    location: 'Bandra, Mumbai',
-    distance: '3.8 km away',
-    wageType: 'daily' as const,
-    wage: '1000',
-    skills: ['Pipe Fitting', 'Drainage', 'Repair Work'],
-    postedTime: '3 hours ago',
-    headcount: 2,
-  },
-];
+// Helper to get work type display name
+const getWorkTypeName = (workType: string) => {
+  const names: Record<string, string> = {
+    mason: 'Mason',
+    electrician: 'Electrician',
+    plumber: 'Plumber',
+    carpenter: 'Carpenter',
+    painter: 'Painter',
+    helper: 'Helper',
+    driver: 'Driver',
+    cleaner: 'Cleaner',
+    cook: 'Cook',
+    security: 'Security Guard',
+  };
+  return names[workType] || workType;
+};
 
 export default function Home() {
-  const [userRole] = useState('worker'); // TODO: Get from auth context
+  const [userRole] = useState('worker');
+  const [userSkills, setUserSkills] = useState<string[]>([]);
+
+  useEffect(() => {
+    const data = localStorage.getItem('onboardingData');
+    if (data) {
+      const parsed = JSON.parse(data);
+      setUserSkills(parsed.skills || []);
+    }
+  }, []);
+
+  const { data: jobs = [], isLoading } = useQuery<Job[]>({
+    queryKey: ['/api/jobs'],
+  });
+
+  // Filter jobs based on user skills
+  const recommendedJobs = jobs.filter(job => 
+    userSkills.includes(job.workType)
+  );
+
+  const otherJobs = jobs.filter(job => 
+    !userSkills.includes(job.workType)
+  );
+
+  // Calculate stats
+  const totalJobs = jobs.length;
+  const todayJobs = jobs.filter(job => {
+    const jobDate = new Date(job.createdAt);
+    const today = new Date();
+    return jobDate.toDateString() === today.toDateString();
+  }).length;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -78,11 +90,11 @@ export default function Home() {
       <div className="px-4 py-3 bg-primary/5 border-b border-primary/10">
         <div className="flex items-center justify-between text-sm">
           <div>
-            <span className="font-semibold text-foreground">245</span>
+            <span className="font-semibold text-foreground">{totalJobs}</span>
             <span className="text-muted-foreground ml-1">jobs nearby</span>
           </div>
           <div>
-            <span className="font-semibold text-chart-3">12</span>
+            <span className="font-semibold text-chart-3">{todayJobs}</span>
             <span className="text-muted-foreground ml-1">new today</span>
           </div>
         </div>
@@ -90,15 +102,76 @@ export default function Home() {
 
       {/* Jobs List */}
       <div className="p-4 space-y-4">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-semibold text-foreground">Jobs For You</h2>
-          <Button variant="ghost" size="sm" data-testid="button-see-all">
-            See All
-          </Button>
-        </div>
-        {mockJobs.map((job) => (
-          <JobCard key={job.id} {...job} />
-        ))}
+        {isLoading ? (
+          <>
+            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-48 w-full" />
+          </>
+        ) : (
+          <>
+            {/* Recommended Jobs Based on Skills */}
+            {recommendedJobs.length > 0 && (
+              <>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-lg font-semibold text-foreground">Recommended For You</h2>
+                  <Badge variant="secondary" className="text-xs">Based on your skills</Badge>
+                </div>
+                {recommendedJobs.map((job) => (
+                  <JobCard
+                    key={job.id}
+                    id={job.id}
+                    title={getWorkTypeName(job.workType)}
+                    employer={`Employer #${job.employerId.slice(0, 8)}`}
+                    location={job.location}
+                    distance="Nearby"
+                    wageType={job.wageType as 'daily' | 'hourly' | 'fixed'}
+                    wage={job.wage.toString()}
+                    skills={job.skills || []}
+                    postedTime={formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
+                    headcount={job.headcount || undefined}
+                  />
+                ))}
+              </>
+            )}
+
+            {/* Other Jobs */}
+            {otherJobs.length > 0 && (
+              <>
+                <div className="flex items-center justify-between mb-2 mt-6">
+                  <h2 className="text-lg font-semibold text-foreground">
+                    {recommendedJobs.length > 0 ? 'Other Jobs' : 'All Jobs'}
+                  </h2>
+                  <Button variant="ghost" size="sm" data-testid="button-see-all">
+                    See All
+                  </Button>
+                </div>
+                {otherJobs.map((job) => (
+                  <JobCard
+                    key={job.id}
+                    id={job.id}
+                    title={getWorkTypeName(job.workType)}
+                    employer={`Employer #${job.employerId.slice(0, 8)}`}
+                    location={job.location}
+                    distance="Nearby"
+                    wageType={job.wageType as 'daily' | 'hourly' | 'fixed'}
+                    wage={job.wage.toString()}
+                    skills={job.skills || []}
+                    postedTime={formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
+                    headcount={job.headcount || undefined}
+                  />
+                ))}
+              </>
+            )}
+
+            {jobs.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">No jobs available at the moment</p>
+                <p className="text-sm text-muted-foreground mt-2">Check back later for new opportunities</p>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

@@ -12,6 +12,7 @@ import Messages from "@/pages/Messages";
 import Profile from "@/pages/Profile";
 import Dashboard from "@/pages/Dashboard";
 import Onboarding from "@/pages/Onboarding";
+import JobDetails from "@/pages/JobDetails";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
@@ -52,6 +53,9 @@ function Router() {
       </Route>
       <Route path="/dashboard">
         {() => <ProtectedRoute component={Dashboard} />}
+      </Route>
+      <Route path="/jobs/:id">
+        {() => <ProtectedRoute component={JobDetails} />}
       </Route>
       <Route component={NotFound} />
     </Switch>

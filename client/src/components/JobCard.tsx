@@ -1,3 +1,4 @@
+import { useLocation } from 'wouter';
 import { LocationOn, Work, AccessTime } from '@mui/icons-material';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,11 +30,16 @@ export default function JobCard({
   postedTime,
   headcount,
 }: JobCardProps) {
+  const [, navigate] = useLocation();
   const wageLabel = wageType === 'daily' ? '/day' : wageType === 'hourly' ? '/hour' : '';
   const workImage = getWorkTypeImage(title);
 
   return (
-    <Card className="hover-elevate active-elevate-2 overflow-hidden" data-testid={`job-card-${id}`}>
+    <Card 
+      className="hover-elevate active-elevate-2 overflow-hidden cursor-pointer" 
+      data-testid={`job-card-${id}`}
+      onClick={() => navigate(`/jobs/${id}`)}
+    >
       {/* Work Type Image */}
       <div className="relative h-40 overflow-hidden bg-muted">
         <img 
@@ -105,7 +111,10 @@ export default function JobCard({
           <Button 
             className="min-h-9" 
             data-testid={`apply-button-${id}`}
-            onClick={() => console.log('Apply clicked for job:', id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/jobs/${id}`);
+            }}
           >
             Apply Now
           </Button>
