@@ -13,6 +13,7 @@ import Profile from "@/pages/Profile";
 import Dashboard from "@/pages/Dashboard";
 import Onboarding from "@/pages/Onboarding";
 import JobDetails from "@/pages/JobDetails";
+import PostJob from "@/pages/PostJob";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
@@ -56,6 +57,9 @@ function Router() {
       </Route>
       <Route path="/jobs/:id">
         {() => <ProtectedRoute component={JobDetails} />}
+      </Route>
+      <Route path="/post-job">
+        {() => <ProtectedRoute component={PostJob} />}
       </Route>
       <Route component={NotFound} />
     </Switch>

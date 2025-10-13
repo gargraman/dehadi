@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import SearchBar from '@/components/SearchBar';
 import JobCard from '@/components/JobCard';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { Notifications } from '@mui/icons-material';
+import { Notifications, Add } from '@mui/icons-material';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -28,6 +29,7 @@ const getWorkTypeName = (workType: string) => {
 };
 
 export default function Home() {
+  const [, navigate] = useLocation();
   const [userRole] = useState('worker');
   const [userSkills, setUserSkills] = useState<string[]>([]);
 
@@ -173,6 +175,16 @@ export default function Home() {
           </>
         )}
       </div>
+
+      {/* Floating Action Button for Posting Jobs */}
+      <Button
+        size="icon"
+        className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-lg z-30"
+        onClick={() => navigate('/post-job')}
+        data-testid="button-post-job-fab"
+      >
+        <Add sx={{ fontSize: 28 }} />
+      </Button>
     </div>
   );
 }
