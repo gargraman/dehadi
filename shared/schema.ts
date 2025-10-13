@@ -28,7 +28,10 @@ export const jobs = pgTable("jobs", {
   wage: integer("wage").notNull(),
   headcount: integer("headcount").default(1),
   skills: text("skills").array(),
-  status: text("status").notNull().default("open"), // open, in_progress, completed, cancelled
+  status: text("status").notNull().default("open"), // open, in_progress, awaiting_payment, paid, completed, cancelled
+  assignedWorkerId: varchar("assigned_worker_id").references(() => users.id), // Worker assigned after accepting application
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -49,6 +52,23 @@ export const messages = pgTable("messages", {
   content: text("content").notNull(),
   isRead: boolean("is_read").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const payments = pgTable("payments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  jobId: varchar("job_id").notNull().references(() => jobs.id),
+  employerId: varchar("employer_id").notNull().references(() => users.id),
+  workerId: varchar("worker_id").notNull().references(() => users.id),
+  amount: integer("amount").notNull(), // Amount in smallest currency unit (paise for INR)
+  currency: text("currency").notNull().default("INR"),
+  status: text("status").notNull().default("pending"), // pending, processing, completed, failed, refunded
+  paymentMethod: text("payment_method"), // upi, razorpay, card, bank_transfer
+  razorpayOrderId: text("razorpay_order_id"),
+  razorpayPaymentId: text("razorpay_payment_id"),
+  razorpaySignature: text("razorpay_signature"),
+  failureReason: text("failure_reason"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  paidAt: timestamp("paid_at"),
 });
 
 // User schemas
@@ -86,3 +106,13 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
 
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
+
+// Payment schemas
+export const insertPaymentSchema = createInsertSchema(payments).omit({
+  id: true,
+  createdAt: true,
+  paidAt: true,
+});
+
+export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+export type Payment = typeof payments.$inferSelect;

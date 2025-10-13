@@ -6,7 +6,9 @@ import {
   type JobApplication,
   type InsertJobApplication,
   type Message,
-  type InsertMessage
+  type InsertMessage,
+  type Payment,
+  type InsertPayment
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -21,6 +23,8 @@ export interface IStorage {
   getJob(id: string): Promise<Job | undefined>;
   createJob(job: InsertJob): Promise<Job>;
   updateJobStatus(id: string, status: string): Promise<Job | undefined>;
+  assignWorkerToJob(jobId: string, workerId: string): Promise<Job | undefined>;
+  markJobCompleted(jobId: string): Promise<Job | undefined>;
   
   // Job Application methods
   getApplicationsForJob(jobId: string): Promise<JobApplication[]>;
@@ -32,6 +36,12 @@ export interface IStorage {
   getMessagesForConversation(userId1: string, userId2: string): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
   markMessageAsRead(id: string): Promise<void>;
+  
+  // Payment methods
+  getPayment(id: string): Promise<Payment | undefined>;
+  getPaymentForJob(jobId: string): Promise<Payment | undefined>;
+  createPayment(payment: InsertPayment): Promise<Payment>;
+  updatePaymentStatus(id: string, status: string, razorpayPaymentId?: string, razorpaySignature?: string): Promise<Payment | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -39,12 +49,14 @@ export class MemStorage implements IStorage {
   private jobs: Map<string, Job>;
   private applications: Map<string, JobApplication>;
   private messages: Map<string, Message>;
+  private payments: Map<string, Payment>;
 
   constructor() {
     this.users = new Map();
     this.jobs = new Map();
     this.applications = new Map();
     this.messages = new Map();
+    this.payments = new Map();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -105,6 +117,9 @@ export class MemStorage implements IStorage {
       locationLat: insertJob.locationLat || null,
       locationLng: insertJob.locationLng || null,
       skills: insertJob.skills || null,
+      assignedWorkerId: insertJob.assignedWorkerId || null,
+      startedAt: insertJob.startedAt || null,
+      completedAt: insertJob.completedAt || null,
     };
     this.jobs.set(id, job);
     return job;
@@ -180,6 +195,80 @@ export class MemStorage implements IStorage {
     if (message) {
       this.messages.set(id, { ...message, isRead: true });
     }
+  }
+
+  async assignWorkerToJob(jobId: string, workerId: string): Promise<Job | undefined> {
+    const job = this.jobs.get(jobId);
+    if (!job) return undefined;
+    
+    const updated = { 
+      ...job, 
+      assignedWorkerId: workerId, 
+      status: "in_progress",
+      startedAt: new Date()
+    };
+    this.jobs.set(jobId, updated);
+    return updated;
+  }
+
+  async markJobCompleted(jobId: string): Promise<Job | undefined> {
+    const job = this.jobs.get(jobId);
+    if (!job) return undefined;
+    
+    const updated = { 
+      ...job, 
+      status: "awaiting_payment",
+      completedAt: new Date()
+    };
+    this.jobs.set(jobId, updated);
+    return updated;
+  }
+
+  async getPayment(id: string): Promise<Payment | undefined> {
+    return this.payments.get(id);
+  }
+
+  async getPaymentForJob(jobId: string): Promise<Payment | undefined> {
+    return Array.from(this.payments.values()).find(payment => payment.jobId === jobId);
+  }
+
+  async createPayment(insertPayment: InsertPayment): Promise<Payment> {
+    const id = randomUUID();
+    const payment: Payment = {
+      ...insertPayment,
+      id,
+      createdAt: new Date(),
+      status: insertPayment.status || "pending",
+      currency: insertPayment.currency || "INR",
+      paymentMethod: insertPayment.paymentMethod || null,
+      razorpayOrderId: insertPayment.razorpayOrderId || null,
+      razorpayPaymentId: insertPayment.razorpayPaymentId || null,
+      razorpaySignature: insertPayment.razorpaySignature || null,
+      failureReason: insertPayment.failureReason || null,
+      paidAt: null,
+    };
+    this.payments.set(id, payment);
+    return payment;
+  }
+
+  async updatePaymentStatus(
+    id: string, 
+    status: string, 
+    razorpayPaymentId?: string, 
+    razorpaySignature?: string
+  ): Promise<Payment | undefined> {
+    const payment = this.payments.get(id);
+    if (!payment) return undefined;
+    
+    const updated = { 
+      ...payment, 
+      status,
+      razorpayPaymentId: razorpayPaymentId || payment.razorpayPaymentId,
+      razorpaySignature: razorpaySignature || payment.razorpaySignature,
+      paidAt: status === "completed" ? new Date() : payment.paidAt
+    };
+    this.payments.set(id, updated);
+    return updated;
   }
 }
 
