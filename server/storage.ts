@@ -50,6 +50,14 @@ export interface IStorage {
   getPaymentByOrderId(razorpayOrderId: string): Promise<Payment | undefined>;
   createPayment(payment: InsertPayment): Promise<Payment>;
   updatePaymentStatus(id: string, status: string, razorpayPaymentId?: string, razorpaySignature?: string): Promise<Payment | undefined>;
+  
+  // Transactional methods
+  completePaymentTransaction(
+    paymentId: string,
+    jobId: string,
+    razorpayPaymentId: string,
+    razorpaySignature: string
+  ): Promise<{ payment: Payment; job: Job } | null>;
 }
 
 export class MemStorage implements IStorage {
@@ -282,6 +290,37 @@ export class MemStorage implements IStorage {
     this.payments.set(id, updated);
     return updated;
   }
+
+  async completePaymentTransaction(
+    paymentId: string,
+    jobId: string,
+    razorpayPaymentId: string,
+    razorpaySignature: string
+  ): Promise<{ payment: Payment; job: Job } | null> {
+    const payment = this.payments.get(paymentId);
+    const job = this.jobs.get(jobId);
+    
+    if (!payment || !job) return null;
+    if (job.status !== "awaiting_payment") return null;
+
+    // Update both payment and job atomically (in-memory, so naturally atomic)
+    const updatedPayment = { 
+      ...payment, 
+      status: "completed",
+      razorpayPaymentId,
+      razorpaySignature,
+      paidAt: new Date()
+    };
+    const updatedJob = { 
+      ...job, 
+      status: "paid"
+    };
+
+    this.payments.set(paymentId, updatedPayment);
+    this.jobs.set(jobId, updatedJob);
+
+    return { payment: updatedPayment, job: updatedJob };
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -460,6 +499,56 @@ export class DatabaseStorage implements IStorage {
       .where(eq(payments.id, id))
       .returning();
     return result[0];
+  }
+
+  async completePaymentTransaction(
+    paymentId: string,
+    jobId: string,
+    razorpayPaymentId: string,
+    razorpaySignature: string
+  ): Promise<{ payment: Payment; job: Job } | null> {
+    try {
+      // Use database transaction to ensure atomicity
+      const result = await db.transaction(async (tx) => {
+        // First, verify job is in correct state
+        const [job] = await tx.select().from(jobs).where(eq(jobs.id, jobId)).limit(1);
+        if (!job || job.status !== "awaiting_payment") {
+          return null;
+        }
+
+        // Update payment status to completed
+        const [updatedPayment] = await tx.update(payments)
+          .set({
+            status: "completed",
+            razorpayPaymentId,
+            razorpaySignature,
+            paidAt: new Date()
+          })
+          .where(eq(payments.id, paymentId))
+          .returning();
+
+        if (!updatedPayment) {
+          return null;
+        }
+
+        // Update job status to paid
+        const [updatedJob] = await tx.update(jobs)
+          .set({ status: "paid" })
+          .where(eq(jobs.id, jobId))
+          .returning();
+
+        if (!updatedJob) {
+          return null;
+        }
+
+        return { payment: updatedPayment, job: updatedJob };
+      });
+
+      return result;
+    } catch (error) {
+      console.error("Transaction failed in completePaymentTransaction:", error);
+      return null;
+    }
   }
 }
 

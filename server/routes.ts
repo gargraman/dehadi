@@ -323,32 +323,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Payment not found" });
       }
 
-      // Update payment and job status atomically
-      // If job status update fails, rollback payment status
-      try {
-        // First, update payment status
-        const updatedPayment = await storage.updatePaymentStatus(
-          payment.id,
-          "completed",
-          razorpayPaymentId,
-          razorpaySignature
-        );
+      // Use atomic transaction to update both payment and job status
+      // This ensures consistency even under database failures
+      const result = await storage.completePaymentTransaction(
+        payment.id,
+        payment.jobId,
+        razorpayPaymentId,
+        razorpaySignature
+      );
 
-        // Then update job status to paid
-        try {
-          await storage.updateJobStatus(payment.jobId, "paid");
-        } catch (jobError) {
-          // Rollback payment status if job update fails
-          console.error("Failed to update job status after payment completion, rolling back payment", jobError);
-          await storage.updatePaymentStatus(payment.id, "failed", razorpayPaymentId, razorpaySignature);
-          throw new Error("Failed to complete payment: job status update failed");
-        }
-
-        res.json({ success: true, payment: updatedPayment });
-      } catch (transactionError) {
-        console.error("Payment verification transaction failed:", transactionError);
-        throw transactionError;
+      if (!result) {
+        return res.status(500).json({ 
+          message: "Failed to complete payment transaction. The job may not be in the correct state or a database error occurred." 
+        });
       }
+
+      res.json({ success: true, payment: result.payment });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid payment data", error: error.errors });
