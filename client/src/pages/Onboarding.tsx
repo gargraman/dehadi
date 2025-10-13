@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { MyLocation, ArrowForward, Check } from '@mui/icons-material';
+import { Hammer, Zap, Droplets, Saw, Paintbrush, HandHelping, Car, Sparkles, ChefHat, Shield } from 'lucide-react';
 
 const languages = [
   { code: 'en', name: 'English', native: 'English' },
@@ -19,12 +20,26 @@ const languages = [
   { code: 'pa', name: 'Punjabi', native: 'ਪੰਜਾਬੀ' },
 ];
 
+const skillCategories = [
+  { id: 'mason', name: 'Mason', icon: Hammer, color: 'text-orange-500' },
+  { id: 'electrician', name: 'Electrician', icon: Zap, color: 'text-yellow-500' },
+  { id: 'plumber', name: 'Plumber', icon: Droplets, color: 'text-blue-500' },
+  { id: 'carpenter', name: 'Carpenter', icon: Saw, color: 'text-amber-600' },
+  { id: 'painter', name: 'Painter', icon: Paintbrush, color: 'text-purple-500' },
+  { id: 'helper', name: 'Helper/Labor', icon: HandHelping, color: 'text-green-500' },
+  { id: 'driver', name: 'Driver', icon: Car, color: 'text-red-500' },
+  { id: 'cleaner', name: 'Cleaner', icon: Sparkles, color: 'text-cyan-500' },
+  { id: 'cook', name: 'Cook', icon: ChefHat, color: 'text-pink-500' },
+  { id: 'security', name: 'Security', icon: Shield, color: 'text-indigo-500' },
+];
+
 export default function Onboarding() {
   const [, setLocation] = useLocation();
   const [step, setStep] = useState(1);
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [currentLocation, setCurrentLocation] = useState('');
   const [isLocating, setIsLocating] = useState(false);
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [aadharNumber, setAadharNumber] = useState('');
 
   const handleLocateMe = () => {
@@ -48,12 +63,27 @@ export default function Onboarding() {
     }
   };
 
+  const toggleSkill = (skillId: string) => {
+    setSelectedSkills(prev => 
+      prev.includes(skillId) 
+        ? prev.filter(id => id !== skillId)
+        : [...prev, skillId]
+    );
+  };
+
+  const handleSkillsNext = () => {
+    if (selectedSkills.length > 0) {
+      setStep(4);
+    }
+  };
+
   const handleComplete = () => {
     if (aadharNumber.length === 12) {
       // Save onboarding data
       const onboardingData = {
         language: selectedLanguage,
         location: currentLocation,
+        skills: selectedSkills,
         aadhar: aadharNumber,
         completedAt: new Date().toISOString(),
       };
@@ -76,12 +106,12 @@ export default function Onboarding() {
         <div className="px-4 py-4">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-lg font-semibold text-foreground">Welcome to Dehadi</h1>
-            <span className="text-sm text-muted-foreground">Step {step} of 3</span>
+            <span className="text-sm text-muted-foreground">Step {step} of 4</span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div 
               className="h-full bg-primary transition-all duration-300"
-              style={{ width: `${(step / 3) * 100}%` }}
+              style={{ width: `${(step / 4) * 100}%` }}
             />
           </div>
         </div>
@@ -199,8 +229,80 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* Step 3: Aadhar Verification */}
+        {/* Step 3: Skills Selection */}
         {step === 3 && (
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Skills</CardTitle>
+                <CardDescription>Select all the work you can do (choose multiple)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  {skillCategories.map((skill) => {
+                    const Icon = skill.icon;
+                    const isSelected = selectedSkills.includes(skill.id);
+                    return (
+                      <button
+                        key={skill.id}
+                        onClick={() => toggleSkill(skill.id)}
+                        className={`p-4 rounded-lg border-2 transition-all hover-elevate active-elevate-2 ${
+                          isSelected
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border bg-card'
+                        }`}
+                        data-testid={`skill-${skill.id}`}
+                      >
+                        <div className="flex flex-col items-center gap-2">
+                          <div className={`p-3 rounded-full ${
+                            isSelected ? 'bg-primary/20' : 'bg-muted'
+                          }`}>
+                            <Icon className={`w-6 h-6 ${
+                              isSelected ? 'text-primary' : skill.color
+                            }`} />
+                          </div>
+                          <span className={`text-sm font-medium text-center ${
+                            isSelected ? 'text-primary' : 'text-foreground'
+                          }`}>
+                            {skill.name}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedSkills.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-3">
+                    {selectedSkills.length} skill{selectedSkills.length > 1 ? 's' : ''} selected
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setStep(2)}
+                className="flex-1 min-h-12"
+                data-testid="button-skills-back"
+              >
+                Back
+              </Button>
+              <Button
+                onClick={handleSkillsNext}
+                disabled={selectedSkills.length === 0}
+                className="flex-1 min-h-12"
+                data-testid="button-skills-next"
+              >
+                Continue
+                <ArrowForward sx={{ fontSize: 20 }} className="ml-2" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Aadhar Verification */}
+        {step === 4 && (
           <div className="space-y-4">
             <Card>
               <CardHeader>
@@ -240,7 +342,7 @@ export default function Onboarding() {
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                onClick={() => setStep(2)}
+                onClick={() => setStep(3)}
                 className="flex-1 min-h-12"
                 data-testid="button-aadhar-back"
               >
