@@ -1,8 +1,16 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
+import Razorpay from "razorpay";
+import crypto from "crypto";
 import { storage } from "./storage";
-import { insertJobSchema, insertJobApplicationSchema, insertMessageSchema } from "@shared/schema";
+import { 
+  insertJobSchema, 
+  insertJobApplicationSchema, 
+  insertMessageSchema, 
+  insertPaymentSchema,
+  type Payment 
+} from "@shared/schema";
 
 // Validation schemas for PATCH endpoints
 const updateStatusSchema = z.object({
@@ -11,6 +19,16 @@ const updateStatusSchema = z.object({
 
 const updateMessageReadSchema = z.object({
   isRead: z.boolean().optional().default(true),
+});
+
+const assignWorkerSchema = z.object({
+  workerId: z.string(),
+});
+
+const verifyPaymentSchema = z.object({
+  razorpayOrderId: z.string(),
+  razorpayPaymentId: z.string(),
+  razorpaySignature: z.string(),
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -110,6 +128,164 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid status data", error: error.errors });
       }
       res.status(500).json({ message: "Failed to update application status" });
+    }
+  });
+
+  // Job Assignment and Completion routes
+  app.post("/api/jobs/:id/assign", async (req, res) => {
+    try {
+      const { workerId } = assignWorkerSchema.parse(req.body);
+      const job = await storage.assignWorkerToJob(req.params.id, workerId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      res.json(job);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", error: error.errors });
+      }
+      res.status(500).json({ message: "Failed to assign worker" });
+    }
+  });
+
+  app.post("/api/jobs/:id/complete", async (req, res) => {
+    try {
+      const job = await storage.markJobCompleted(req.params.id);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      res.json(job);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to mark job as completed" });
+    }
+  });
+
+  // Payment routes
+  app.post("/api/payments/create-order", async (req, res) => {
+    try {
+      const { jobId } = req.body;
+      
+      // Check if Razorpay keys are configured
+      const keyId = process.env.RAZORPAY_KEY_ID;
+      const keySecret = process.env.RAZORPAY_KEY_SECRET;
+      
+      if (!keyId || !keySecret) {
+        return res.status(503).json({ 
+          message: "Payment gateway not configured. Please configure Razorpay keys." 
+        });
+      }
+
+      // Get job details
+      const job = await storage.getJob(jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      if (job.status !== "awaiting_payment") {
+        return res.status(400).json({ 
+          message: "Job must be completed before payment can be initiated" 
+        });
+      }
+
+      // Initialize Razorpay
+      const razorpay = new Razorpay({
+        key_id: keyId,
+        key_secret: keySecret,
+      });
+
+      // Create Razorpay order
+      const order = await razorpay.orders.create({
+        amount: job.wage * 100, // Convert to paise
+        currency: "INR",
+        receipt: `job_${jobId}`,
+      });
+
+      // Create payment record
+      const payment = await storage.createPayment({
+        jobId,
+        employerId: job.employerId,
+        workerId: job.assignedWorkerId!,
+        amount: job.wage * 100,
+        currency: "INR",
+        status: "pending",
+        razorpayOrderId: order.id,
+        paymentMethod: "razorpay",
+        razorpayPaymentId: null,
+        razorpaySignature: null,
+        failureReason: null,
+      });
+
+      res.json({ 
+        orderId: order.id, 
+        amount: order.amount,
+        currency: order.currency,
+        paymentId: payment.id,
+        keyId 
+      });
+    } catch (error) {
+      console.error("Payment creation error:", error);
+      res.status(500).json({ message: "Failed to create payment order" });
+    }
+  });
+
+  app.post("/api/payments/verify", async (req, res) => {
+    try {
+      const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = verifyPaymentSchema.parse(req.body);
+      
+      const keySecret = process.env.RAZORPAY_KEY_SECRET;
+      if (!keySecret) {
+        return res.status(503).json({ message: "Payment gateway not configured" });
+      }
+
+      // Verify signature
+      const generatedSignature = crypto
+        .createHmac("sha256", keySecret)
+        .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+        .digest("hex");
+
+      if (generatedSignature !== razorpaySignature) {
+        return res.status(400).json({ message: "Invalid payment signature" });
+      }
+
+      // Find payment by order ID - access private field via type assertion
+      const memStorage = storage as any;
+      const payments = Array.from(memStorage.payments.values()) as Payment[];
+      const payment = payments.find(p => p.razorpayOrderId === razorpayOrderId);
+      
+      if (!payment) {
+        return res.status(404).json({ message: "Payment not found" });
+      }
+
+      // Update payment status
+      const updatedPayment = await storage.updatePaymentStatus(
+        payment.id,
+        "completed",
+        razorpayPaymentId,
+        razorpaySignature
+      );
+
+      // Update job status to paid
+      await storage.updateJobStatus(payment.jobId, "paid");
+
+      res.json({ success: true, payment: updatedPayment });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid payment data", error: error.errors });
+      }
+      console.error("Payment verification error:", error);
+      res.status(500).json({ message: "Failed to verify payment" });
+    }
+  });
+
+  app.get("/api/payments/job/:jobId", async (req, res) => {
+    try {
+      const payment = await storage.getPaymentForJob(req.params.jobId);
+      if (!payment) {
+        return res.status(404).json({ message: "Payment not found" });
+      }
+      res.json(payment);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch payment" });
     }
   });
 
