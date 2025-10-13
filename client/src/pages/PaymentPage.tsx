@@ -102,9 +102,29 @@ export default function PaymentPage() {
       razorpay.open();
     },
     onError: (error: any) => {
+      // Extract server error message if available
+      // apiRequest throws Error with message format: "statusCode: responseText"
+      let errorMessage = 'Failed to create payment order';
+      try {
+        const errorText = error?.message || '';
+        // Match format like "503: {"message":"..."}"
+        const match = errorText.match(/^\d+:\s*(.+)$/);
+        if (match) {
+          try {
+            const parsed = JSON.parse(match[1]);
+            errorMessage = parsed.message || errorMessage;
+          } catch {
+            // If not JSON, use the text as-is
+            errorMessage = match[1];
+          }
+        }
+      } catch (e) {
+        // Use default message
+      }
+      
       toast({
         title: 'Error',
-        description: error.message || 'Failed to create payment order',
+        description: errorMessage,
         variant: 'destructive',
       });
     },
@@ -131,9 +151,29 @@ export default function PaymentPage() {
       setTimeout(() => navigate(`/jobs/${jobId}`), 2000);
     },
     onError: (error: any) => {
+      // Extract server error message if available
+      // apiRequest throws Error with message format: "statusCode: responseText"
+      let errorMessage = 'Failed to verify payment';
+      try {
+        const errorText = error?.message || '';
+        // Match format like "400: {"message":"..."}"
+        const match = errorText.match(/^\d+:\s*(.+)$/);
+        if (match) {
+          try {
+            const parsed = JSON.parse(match[1]);
+            errorMessage = parsed.message || errorMessage;
+          } catch {
+            // If not JSON, use the text as-is
+            errorMessage = match[1];
+          }
+        }
+      } catch (e) {
+        // Use default message
+      }
+      
       toast({
         title: 'Payment Verification Failed',
-        description: error.message || 'Failed to verify payment',
+        description: errorMessage,
         variant: 'destructive',
       });
     },

@@ -293,18 +293,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = verifyPaymentSchema.parse(req.body);
       
+      // CRITICAL: Must have Razorpay secret key to verify signatures
       const keySecret = process.env.RAZORPAY_KEY_SECRET;
       if (!keySecret) {
-        return res.status(503).json({ message: "Payment gateway not configured" });
+        console.error("Payment verification attempted without RAZORPAY_KEY_SECRET configured");
+        return res.status(503).json({ 
+          message: "Payment gateway not configured. Cannot verify payment." 
+        });
       }
 
-      // Verify signature
+      // Verify signature using HMAC SHA256
       const generatedSignature = crypto
         .createHmac("sha256", keySecret)
         .update(`${razorpayOrderId}|${razorpayPaymentId}`)
         .digest("hex");
 
       if (generatedSignature !== razorpaySignature) {
+        console.warn("Payment verification failed: Invalid signature", {
+          razorpayOrderId,
+          razorpayPaymentId
+        });
         return res.status(400).json({ message: "Invalid payment signature" });
       }
 
@@ -315,18 +323,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Payment not found" });
       }
 
-      // Update payment status
-      const updatedPayment = await storage.updatePaymentStatus(
-        payment.id,
-        "completed",
-        razorpayPaymentId,
-        razorpaySignature
-      );
+      // Update payment and job status atomically
+      // If job status update fails, rollback payment status
+      try {
+        // First, update payment status
+        const updatedPayment = await storage.updatePaymentStatus(
+          payment.id,
+          "completed",
+          razorpayPaymentId,
+          razorpaySignature
+        );
 
-      // Update job status to paid
-      await storage.updateJobStatus(payment.jobId, "paid");
+        // Then update job status to paid
+        try {
+          await storage.updateJobStatus(payment.jobId, "paid");
+        } catch (jobError) {
+          // Rollback payment status if job update fails
+          console.error("Failed to update job status after payment completion, rolling back payment", jobError);
+          await storage.updatePaymentStatus(payment.id, "failed", razorpayPaymentId, razorpaySignature);
+          throw new Error("Failed to complete payment: job status update failed");
+        }
 
-      res.json({ success: true, payment: updatedPayment });
+        res.json({ success: true, payment: updatedPayment });
+      } catch (transactionError) {
+        console.error("Payment verification transaction failed:", transactionError);
+        throw transactionError;
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid payment data", error: error.errors });
