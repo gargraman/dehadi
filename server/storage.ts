@@ -8,9 +8,16 @@ import {
   type Message,
   type InsertMessage,
   type Payment,
-  type InsertPayment
+  type InsertPayment,
+  users,
+  jobs,
+  jobApplications,
+  messages,
+  payments
 } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq, and, or, desc } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -272,4 +279,178 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  async getUser(id: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
+    return result[0];
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const result = await db.insert(users).values(user).returning();
+    return result[0];
+  }
+
+  async getJobs(filters?: { workType?: string; location?: string; status?: string }): Promise<Job[]> {
+    const conditions = [];
+    if (filters?.workType) {
+      conditions.push(eq(jobs.workType, filters.workType));
+    }
+    if (filters?.status) {
+      conditions.push(eq(jobs.status, filters.status));
+    }
+    
+    let result;
+    if (conditions.length > 0) {
+      result = await db.select().from(jobs)
+        .where(and(...conditions))
+        .orderBy(desc(jobs.createdAt));
+    } else {
+      result = await db.select().from(jobs)
+        .orderBy(desc(jobs.createdAt));
+    }
+    
+    if (filters?.location) {
+      result = result.filter(job => job.location.includes(filters.location!));
+    }
+    
+    return result;
+  }
+
+  async getJob(id: string): Promise<Job | undefined> {
+    const result = await db.select().from(jobs).where(eq(jobs.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createJob(job: InsertJob): Promise<Job> {
+    const result = await db.insert(jobs).values(job).returning();
+    return result[0];
+  }
+
+  async updateJobStatus(id: string, status: string): Promise<Job | undefined> {
+    const result = await db.update(jobs)
+      .set({ status })
+      .where(eq(jobs.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async assignWorkerToJob(jobId: string, workerId: string): Promise<Job | undefined> {
+    const result = await db.update(jobs)
+      .set({ 
+        assignedWorkerId: workerId, 
+        status: "in_progress",
+        startedAt: new Date()
+      })
+      .where(eq(jobs.id, jobId))
+      .returning();
+    return result[0];
+  }
+
+  async markJobCompleted(jobId: string): Promise<Job | undefined> {
+    const result = await db.update(jobs)
+      .set({ 
+        status: "awaiting_payment",
+        completedAt: new Date()
+      })
+      .where(eq(jobs.id, jobId))
+      .returning();
+    return result[0];
+  }
+
+  async getApplicationsForJob(jobId: string): Promise<JobApplication[]> {
+    return await db.select()
+      .from(jobApplications)
+      .where(eq(jobApplications.jobId, jobId))
+      .orderBy(desc(jobApplications.createdAt));
+  }
+
+  async getApplicationsForWorker(workerId: string): Promise<JobApplication[]> {
+    return await db.select()
+      .from(jobApplications)
+      .where(eq(jobApplications.workerId, workerId))
+      .orderBy(desc(jobApplications.createdAt));
+  }
+
+  async createApplication(application: InsertJobApplication): Promise<JobApplication> {
+    const result = await db.insert(jobApplications).values(application).returning();
+    return result[0];
+  }
+
+  async updateApplicationStatus(id: string, status: string): Promise<JobApplication | undefined> {
+    const result = await db.update(jobApplications)
+      .set({ status })
+      .where(eq(jobApplications.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getMessagesForConversation(userId1: string, userId2: string): Promise<Message[]> {
+    return await db.select()
+      .from(messages)
+      .where(
+        or(
+          and(eq(messages.senderId, userId1), eq(messages.receiverId, userId2)),
+          and(eq(messages.senderId, userId2), eq(messages.receiverId, userId1))
+        )
+      )
+      .orderBy(messages.createdAt);
+  }
+
+  async createMessage(message: InsertMessage): Promise<Message> {
+    const result = await db.insert(messages).values(message).returning();
+    return result[0];
+  }
+
+  async markMessageAsRead(id: string): Promise<void> {
+    await db.update(messages)
+      .set({ isRead: true })
+      .where(eq(messages.id, id));
+  }
+
+  async getPayment(id: string): Promise<Payment | undefined> {
+    const result = await db.select().from(payments).where(eq(payments.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getPaymentForJob(jobId: string): Promise<Payment | undefined> {
+    const result = await db.select().from(payments).where(eq(payments.jobId, jobId)).limit(1);
+    return result[0];
+  }
+
+  async createPayment(payment: InsertPayment): Promise<Payment> {
+    const result = await db.insert(payments).values(payment).returning();
+    return result[0];
+  }
+
+  async updatePaymentStatus(
+    id: string, 
+    status: string, 
+    razorpayPaymentId?: string, 
+    razorpaySignature?: string
+  ): Promise<Payment | undefined> {
+    const updateData: any = { status };
+    
+    if (razorpayPaymentId) {
+      updateData.razorpayPaymentId = razorpayPaymentId;
+    }
+    if (razorpaySignature) {
+      updateData.razorpaySignature = razorpaySignature;
+    }
+    if (status === "completed") {
+      updateData.paidAt = new Date();
+    }
+    
+    const result = await db.update(payments)
+      .set(updateData)
+      .where(eq(payments.id, id))
+      .returning();
+    return result[0];
+  }
+}
+
+export const storage = new DatabaseStorage();

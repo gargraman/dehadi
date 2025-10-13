@@ -52,9 +52,10 @@ Preferred communication style: Simple, everyday language.
 - Schema-first approach with Zod validation
 
 **Storage Strategy**
-- In-memory storage implementation (`MemStorage`) for development
-- Interface-based storage layer (`IStorage`) enabling easy database swapping
-- Planned migration to full PostgreSQL implementation
+- Database persistence using `DatabaseStorage` with Drizzle ORM
+- Interface-based storage layer (`IStorage`) enabling easy storage swapping
+- PostgreSQL database for production-ready data persistence
+- Legacy `MemStorage` implementation available for testing
 
 ### State Management
 
