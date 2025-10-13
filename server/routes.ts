@@ -135,11 +135,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/jobs/:id/assign", async (req, res) => {
     try {
       const { workerId } = assignWorkerSchema.parse(req.body);
-      const job = await storage.assignWorkerToJob(req.params.id, workerId);
+      
+      // Validate job exists and is in correct state
+      const job = await storage.getJob(req.params.id);
       if (!job) {
         return res.status(404).json({ message: "Job not found" });
       }
-      res.json(job);
+      
+      if (job.status !== "open") {
+        return res.status(400).json({ 
+          message: `Cannot assign worker to job with status '${job.status}'. Job must be 'open'.` 
+        });
+      }
+      
+      if (job.assignedWorkerId) {
+        return res.status(400).json({ 
+          message: "Job already has an assigned worker" 
+        });
+      }
+      
+      // Validate worker exists
+      const worker = await storage.getUser(workerId);
+      if (!worker) {
+        return res.status(404).json({ message: "Worker not found" });
+      }
+      
+      if (worker.role !== "worker") {
+        return res.status(400).json({ 
+          message: "User must have 'worker' role to be assigned to jobs" 
+        });
+      }
+      
+      // Assign worker to job
+      const updatedJob = await storage.assignWorkerToJob(req.params.id, workerId);
+      res.json(updatedJob);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid data", error: error.errors });
@@ -150,11 +179,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/jobs/:id/complete", async (req, res) => {
     try {
-      const job = await storage.markJobCompleted(req.params.id);
+      // Validate job exists and is in correct state
+      const job = await storage.getJob(req.params.id);
       if (!job) {
         return res.status(404).json({ message: "Job not found" });
       }
-      res.json(job);
+      
+      if (job.status !== "in_progress") {
+        return res.status(400).json({ 
+          message: `Cannot complete job with status '${job.status}'. Job must be 'in_progress'.` 
+        });
+      }
+      
+      if (!job.assignedWorkerId) {
+        return res.status(400).json({ 
+          message: "Cannot complete job without an assigned worker" 
+        });
+      }
+      
+      // Mark job as completed
+      const updatedJob = await storage.markJobCompleted(req.params.id);
+      res.json(updatedJob);
     } catch (error) {
       res.status(500).json({ message: "Failed to mark job as completed" });
     }
