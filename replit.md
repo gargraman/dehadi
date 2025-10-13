@@ -83,6 +83,9 @@ Preferred communication style: Simple, everyday language.
 - `/messages` - Communication hub
 - `/profile` - User profile and settings
 - `/dashboard` - Admin analytics (role-based)
+- `/jobs/:id` - Job details and application
+- `/jobs/:id/payment` - Payment interface for completed jobs
+- `/post-job` - Job posting form for employers
 
 ### Authentication & Authorization
 
@@ -95,6 +98,49 @@ Preferred communication style: Simple, everyday language.
 - JWT-based authentication
 - Role-based access control (RBAC)
 - OAuth integration for social login
+
+### Payment Integration & Job Lifecycle
+
+**Payment Gateway**
+- **Razorpay** integration for UPI and online payments
+- Secure payment verification using HMAC SHA256 signatures
+- Payment order creation and verification endpoints
+- Support for multiple payment methods (UPI, cards, net banking)
+- Automatic job status updates after successful payment
+
+**Job Status Lifecycle**
+- **open**: Job posted and accepting applications
+- **in_progress**: Worker assigned and job started
+- **awaiting_payment**: Job completed, pending employer payment
+- **paid**: Payment completed successfully
+- **completed**: Job fully finished
+- **cancelled**: Job cancelled by employer
+
+**Status Tracking Features**
+- Visual status indicators on job cards with distinct icons
+- Real-time status updates across the application
+- Worker assignment tracking with assignedWorkerId field
+- Timestamp tracking for startedAt and completedAt
+- Payment history and transaction records
+
+**API Endpoints**
+- `POST /api/payments/create-order` - Initialize Razorpay payment
+- `POST /api/payments/verify` - Verify payment signature
+- `GET /api/payments/job/:jobId` - Get payment details for a job
+- `POST /api/jobs/:id/assign` - Assign worker to job
+- `POST /api/jobs/:id/complete` - Mark job as completed
+- `PATCH /api/jobs/:id/status` - Update job status
+
+**Database Schema**
+- `payments` table with Razorpay order/payment tracking
+- Enhanced `jobs` table with lifecycle fields
+- Foreign key relationships for data integrity
+
+**Future Enhancements**
+- Ratings and comments for completed jobs
+- Dispute resolution system
+- Payment refunds and reversals
+- Worker performance metrics
 
 ### Internationalization (i18n)
 
@@ -126,6 +172,11 @@ Preferred communication style: Simple, everyday language.
 - **Neon Serverless PostgreSQL** - Primary database
 - Connection via `@neondatabase/serverless` package
 - WebSocket-based connection pooling
+
+**Payment Gateway**
+- **Razorpay** - Payment processing for UPI, cards, and net banking
+- Supports multiple Indian payment methods
+- Environment variables: `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`
 
 **Fonts & Assets**
 - **Google Fonts API** - Inter and Noto Sans font families
