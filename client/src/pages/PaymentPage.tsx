@@ -52,11 +52,8 @@ export default function PaymentPage() {
   // Create payment order mutation
   const createOrderMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/payments/create-order`, {
-        method: 'POST',
-        body: JSON.stringify({ jobId }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const res = await apiRequest('POST', '/api/payments/create-order', { jobId });
+      return res.json();
     },
     onSuccess: (data: any) => {
       if (!razorpayLoaded) {
@@ -120,11 +117,8 @@ export default function PaymentPage() {
       razorpayPaymentId: string;
       razorpaySignature: string;
     }) => {
-      return apiRequest(`/api/payments/verify`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const res = await apiRequest('POST', '/api/payments/verify', data);
+      return res.json();
     },
     onSuccess: () => {
       toast({

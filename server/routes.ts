@@ -232,6 +232,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      if (!job.assignedWorkerId) {
+        return res.status(400).json({ 
+          message: "Job must have an assigned worker before payment can be initiated" 
+        });
+      }
+
+      // Check if payment already exists for this job
+      const existingPayment = await storage.getPaymentForJob(jobId);
+      if (existingPayment && existingPayment.status !== "failed") {
+        return res.status(400).json({ 
+          message: "Payment already exists for this job",
+          paymentId: existingPayment.id,
+          status: existingPayment.status
+        });
+      }
+
       // Initialize Razorpay
       const razorpay = new Razorpay({
         key_id: keyId,
