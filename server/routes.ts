@@ -1,7 +1,17 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { z } from "zod";
 import { storage } from "./storage";
 import { insertJobSchema, insertJobApplicationSchema, insertMessageSchema } from "@shared/schema";
+
+// Validation schemas for PATCH endpoints
+const updateStatusSchema = z.object({
+  status: z.string().min(1),
+});
+
+const updateMessageReadSchema = z.object({
+  isRead: z.boolean().optional().default(true),
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -44,13 +54,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/jobs/:id/status", async (req, res) => {
     try {
-      const { status } = req.body;
+      const { status } = updateStatusSchema.parse(req.body);
       const job = await storage.updateJobStatus(req.params.id, status);
       if (!job) {
         return res.status(404).json({ message: "Job not found" });
       }
       res.json(job);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid status data", error: error.errors });
+      }
       res.status(500).json({ message: "Failed to update job status" });
     }
   });
@@ -86,13 +99,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/applications/:id/status", async (req, res) => {
     try {
-      const { status } = req.body;
+      const { status } = updateStatusSchema.parse(req.body);
       const application = await storage.updateApplicationStatus(req.params.id, status);
       if (!application) {
         return res.status(404).json({ message: "Application not found" });
       }
       res.json(application);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid status data", error: error.errors });
+      }
       res.status(500).json({ message: "Failed to update application status" });
     }
   });
@@ -120,9 +136,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/messages/:id/read", async (req, res) => {
     try {
+      updateMessageReadSchema.parse(req.body); // Validate request even though we don't use the value
       await storage.markMessageAsRead(req.params.id);
       res.json({ success: true });
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid request data", error: error.errors });
+      }
       res.status(500).json({ message: "Failed to mark message as read" });
     }
   });
