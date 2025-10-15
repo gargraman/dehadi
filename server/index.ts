@@ -66,19 +66,19 @@ app.use(session({
     const server = await registerRoutes(app, dependencies);
     logger.info('Application routes registered');
 
-    // 404 handler for unmatched routes (must be after all routes)
-    app.use(notFoundHandler);
-
-    // Global error handler (must be last)
-    app.use(errorHandler);
-
     // Setup Vite in development, serve static in production
-    // This must be after all API routes to avoid conflicts
+    // This must be before 404 handler so UI routes are handled by Vite
     if (app.get("env") === "development") {
       await setupVite(app, server);
     } else {
       serveStatic(app);
     }
+
+    // 404 handler for unmatched routes (must be after all API routes and Vite setup)
+    app.use(notFoundHandler);
+
+    // Global error handler (must be last)
+    app.use(errorHandler);
 
     // Start server
     const port = parseInt(process.env.PORT || '5000', 10);
