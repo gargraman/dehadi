@@ -5,6 +5,8 @@ import { eq } from 'drizzle-orm';
 import { registerRoutes } from '../../../server/routes';
 import { testDb, cleanupDatabase, closeDatabase } from '../../setup/test-db';
 import { users, jobs } from '../../../shared/schema';
+import { createTestDependencies } from '../../fixtures/test-dependencies';
+import { TestDataFactory } from '../../fixtures/test-data';
 import type { Server } from 'http';
 
 describe('Job API Integration Tests', () => {
@@ -13,11 +15,17 @@ describe('Job API Integration Tests', () => {
   let testEmployer: any;
   let testWorker: any;
   let testJob: any;
+  let dependencies: ReturnType<typeof createTestDependencies>;
+  let dataFactory: TestDataFactory;
 
   beforeAll(async () => {
+    // Setup test dependencies
+    dependencies = createTestDependencies();
+    dataFactory = new TestDataFactory(dependencies.storage);
+
     app = express();
     app.use(express.json());
-    server = await registerRoutes(app);
+    server = await registerRoutes(app, dependencies);
   });
 
   afterAll(async () => {
@@ -27,50 +35,16 @@ describe('Job API Integration Tests', () => {
 
   beforeEach(async () => {
     await cleanupDatabase();
-    
-    // Create test employer
-    const [employer] = await testDb.insert(users).values({
-      username: 'test_employer',
-      password: 'test123',
-      role: 'employer',
-      language: 'en',
-      location: 'Mumbai',
-      skills: [],
-      aadhar: null
-    }).returning();
-    testEmployer = employer;
 
-    // Create test worker
-    const [worker] = await testDb.insert(users).values({
-      username: 'test_worker',
-      password: 'test123',
-      role: 'worker',
-      language: 'hi',
-      location: 'Mumbai',
-      skills: ['mason', 'tiling'],
-      aadhar: '123456789012'
-    }).returning();
-    testWorker = worker;
+    // Create test data using the data factory
+    const workflow = await dataFactory.createJobWorkflow({
+      jobStatus: "open",
+      withApplication: false,
+    });
 
-    // Create test job
-    const [job] = await testDb.insert(jobs).values({
-      employerId: testEmployer.id,
-      title: 'Mason needed in Mumbai',
-      description: 'Need experienced mason for residential work',
-      workType: 'mason',
-      location: 'Mumbai',
-      locationLat: '19.0760',
-      locationLng: '72.8777',
-      wageType: 'daily',
-      wage: 800,
-      headcount: 1,
-      skills: ['bricklaying'],
-      status: 'open',
-      assignedWorkerId: null,
-      startedAt: null,
-      completedAt: null
-    }).returning();
-    testJob = job;
+    testEmployer = workflow.employer;
+    testWorker = workflow.worker;
+    testJob = workflow.job;
   });
 
   describe('GET /api/jobs', () => {
@@ -86,23 +60,13 @@ describe('Job API Integration Tests', () => {
     });
 
     it('should filter jobs by work type', async () => {
-      // Create another job with different work type
-      await testDb.insert(jobs).values({
-        employerId: testEmployer.id,
+      // Create another job with different work type using data factory
+      await dataFactory.createTestJob(testEmployer.id, {
         title: 'Electrician needed',
         description: 'Electrical work',
         workType: 'electrician',
-        location: 'Mumbai',
-        locationLat: '19.0760',
-        locationLng: '72.8777',
-        wageType: 'daily',
         wage: 1000,
-        headcount: 1,
         skills: ['wiring'],
-        status: 'open',
-        assignedWorkerId: null,
-        startedAt: null,
-        completedAt: null
       });
 
       const response = await request(app)

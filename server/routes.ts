@@ -1,16 +1,16 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
-import Razorpay from "razorpay";
 import crypto from "crypto";
-import { storage } from "./storage";
-import { 
-  insertJobSchema, 
-  insertJobApplicationSchema, 
-  insertMessageSchema, 
-  insertPaymentSchema,
-  type Payment 
+import type { IDependencies } from "./dependencies";
+import {
+  insertJobSchema,
+  insertJobApplicationSchema,
+  insertMessageSchema,
+  insertPaymentSchema
 } from "@shared/schema";
+import { ensureAuthenticated, ensureRole, AuthenticatedRequest } from "./middleware/auth.middleware";
+import { logger } from "./lib/logger";
 
 // Validation schemas for PATCH endpoints
 const updateStatusSchema = z.object({
@@ -31,10 +31,11 @@ const verifyPaymentSchema = z.object({
   razorpaySignature: z.string(),
 });
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: Express, dependencies: IDependencies): Promise<Server> {
+  const { storage, paymentClient, paymentConfig } = dependencies;
   
   // Health check endpoint for load balancers and monitoring
-  app.get("/api/health", async (req, res) => {
+  app.get("/api/health", async (_req, res) => {
     try {
       // Check database connectivity
       await storage.getJobs({ status: "open" });
@@ -45,15 +46,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       // Log health check failure for monitoring and debugging
-      console.error("Health check failed - Database connectivity issue", {
+      // Better error serialization to avoid generic [object Object]
+      const serializedError = error instanceof Error
+        ? { message: error.message, stack: error.stack }
+        : typeof error === 'object'
+          ? JSON.parse(JSON.stringify(error, Object.getOwnPropertyNames(error)))
+          : { message: String(error) };
+      logger.error("Health check failed - Database connectivity issue", {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV,
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
+        error: serializedError
       });
-      
-      res.status(503).json({ 
-        status: "unhealthy", 
+
+      res.status(503).json({
+        status: "unhealthy",
         error: "Database connection failed",
         timestamp: new Date().toISOString()
       });
@@ -87,29 +93,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/jobs", async (req, res) => {
+  // Create job - employers only
+  app.post("/api/jobs", ensureAuthenticated, ensureRole('employer'), async (req: AuthenticatedRequest, res, next) => {
     try {
       const parsed = insertJobSchema.parse(req.body);
-      const job = await storage.createJob(parsed);
+      const job = await storage.createJob({
+        ...parsed,
+        employerId: req.user!.id // Use authenticated user ID
+      });
+
+      logger.info('Job created', { jobId: job.id, employerId: req.user!.id });
       res.status(201).json(job);
     } catch (error) {
-      res.status(400).json({ message: "Invalid job data", error });
+      next(error);
     }
   });
 
-  app.patch("/api/jobs/:id/status", async (req, res) => {
+  // Update job status - employer only (their own jobs)
+  app.patch("/api/jobs/:id/status", ensureAuthenticated, ensureRole('employer'), async (req: AuthenticatedRequest, res, next) => {
     try {
       const { status } = updateStatusSchema.parse(req.body);
-      const job = await storage.updateJobStatus(req.params.id, status);
-      if (!job) {
+
+      // Verify job belongs to employer
+      const existingJob = await storage.getJob(req.params.id);
+      if (!existingJob) {
         return res.status(404).json({ message: "Job not found" });
       }
+      if (existingJob.employerId !== req.user!.id) {
+        return res.status(403).json({ message: "You can only update your own jobs" });
+      }
+
+      const job = await storage.updateJobStatus(req.params.id, status);
+      logger.info('Job status updated', { jobId: req.params.id, newStatus: status });
       res.json(job);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid status data", error: error.errors });
-      }
-      res.status(500).json({ message: "Failed to update job status" });
+      next(error);
     }
   });
 
@@ -132,13 +150,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/applications", async (req, res) => {
+  // Create application - workers only
+  app.post("/api/applications", ensureAuthenticated, ensureRole('worker'), async (req: AuthenticatedRequest, res, next) => {
     try {
       const parsed = insertJobApplicationSchema.parse(req.body);
-      const application = await storage.createApplication(parsed);
+      const application = await storage.createApplication({
+        ...parsed,
+        workerId: req.user!.id // Use authenticated user ID
+      });
+
+      logger.info('Application created', { applicationId: application.id, jobId: parsed.jobId });
       res.status(201).json(application);
     } catch (error) {
-      res.status(400).json({ message: "Invalid application data", error });
+      next(error);
     }
   });
 
@@ -236,14 +260,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/payments/create-order", async (req, res) => {
     try {
       const { jobId } = req.body;
-      
-      // Check if Razorpay keys are configured
-      const keyId = process.env.RAZORPAY_KEY_ID;
-      const keySecret = process.env.RAZORPAY_KEY_SECRET;
-      
-      if (!keyId || !keySecret) {
-        return res.status(503).json({ 
-          message: "Payment gateway not configured. Please configure Razorpay keys." 
+
+      // Check if payment client is configured
+      if (!paymentClient || !paymentConfig.keyId || !paymentConfig.keySecret) {
+        return res.status(503).json({
+          message: "Payment gateway not configured. Please configure Razorpay keys."
         });
       }
 
@@ -275,14 +296,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Initialize Razorpay
-      const razorpay = new Razorpay({
-        key_id: keyId,
-        key_secret: keySecret,
-      });
-
-      // Create Razorpay order
-      const order = await razorpay.orders.create({
+      // Create Razorpay order using injected payment client
+      const order = await paymentClient.orders.create({
         amount: job.wage * 100, // Convert to paise
         currency: "INR",
         receipt: `job_${jobId}`,
@@ -303,15 +318,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         failureReason: null,
       });
 
-      res.json({ 
-        orderId: order.id, 
+      res.json({
+        orderId: order.id,
         amount: order.amount,
         currency: order.currency,
         paymentId: payment.id,
-        keyId 
+        keyId: paymentConfig.keyId
       });
     } catch (error) {
-      console.error("Payment creation error:", error);
+      logger.error("Payment creation error", { error });
       res.status(500).json({ message: "Failed to create payment order" });
     }
   });
@@ -319,24 +334,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/payments/verify", async (req, res) => {
     try {
       const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = verifyPaymentSchema.parse(req.body);
-      
+
       // CRITICAL: Must have Razorpay secret key to verify signatures
-      const keySecret = process.env.RAZORPAY_KEY_SECRET;
-      if (!keySecret) {
-        console.error("Payment verification attempted without RAZORPAY_KEY_SECRET configured");
-        return res.status(503).json({ 
-          message: "Payment gateway not configured. Cannot verify payment." 
+      if (!paymentConfig.keySecret) {
+        logger.error("Payment verification attempted without RAZORPAY_KEY_SECRET configured");
+        return res.status(503).json({
+          message: "Payment gateway not configured. Cannot verify payment."
         });
       }
 
       // Verify signature using HMAC SHA256
       const generatedSignature = crypto
-        .createHmac("sha256", keySecret)
+        .createHmac("sha256", paymentConfig.keySecret)
         .update(`${razorpayOrderId}|${razorpayPaymentId}`)
         .digest("hex");
 
       if (generatedSignature !== razorpaySignature) {
-        console.warn("Payment verification failed: Invalid signature", {
+        logger.warn("Payment verification failed: Invalid signature", {
           razorpayOrderId,
           razorpayPaymentId
         });
@@ -370,7 +384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid payment data", error: error.errors });
       }
-      console.error("Payment verification error:", error);
+      logger.error("Payment verification error", { error });
       res.status(500).json({ message: "Failed to verify payment" });
     }
   });
@@ -398,13 +412,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/messages", async (req, res) => {
+  // Send message - authenticated users only
+  app.post("/api/messages", ensureAuthenticated, async (req: AuthenticatedRequest, res, next) => {
     try {
       const parsed = insertMessageSchema.parse(req.body);
-      const message = await storage.createMessage(parsed);
+      const message = await storage.createMessage({
+        ...parsed,
+        senderId: req.user!.id // Use authenticated user ID
+      });
+
+      logger.info('Message sent', { messageId: message.id, receiverId: parsed.receiverId });
       res.status(201).json(message);
     } catch (error) {
-      res.status(400).json({ message: "Invalid message data", error });
+      next(error);
     }
   });
 

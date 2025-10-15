@@ -1,71 +1,99 @@
-import express, { type Request, Response, NextFunction } from "express";
+import express from "express";
+import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { setupVite, serveStatic } from "./vite";
+import { createProductionDependencies } from "./dependencies";
+import { setupAuthentication } from "./middleware/auth.middleware";
+import { createAuthRoutes } from "./routes/auth.routes";
+import { errorHandler, notFoundHandler } from "./middleware/error.middleware";
+import { logger, requestLogger } from "./lib/logger";
+import { pool, ready } from "./db";
 
 const app = express();
+
+// Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+// HTTP request logging
+app.use(requestLogger);
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
+// Session configuration
+const PgSession = connectPgSimple(session);
+const sessionSecret = process.env.SESSION_SECRET;
 
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
+// Validate session secret in production
+if (!sessionSecret) {
+  if (process.env.NODE_ENV === 'production') {
+    logger.error('SESSION_SECRET not set in production - server will not start');
+    throw new Error('SESSION_SECRET environment variable must be set in production');
+  }
+  logger.warn('SESSION_SECRET not set - using insecure default (development only)');
+}
 
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
-    }
-  });
-
-  next();
-});
+app.use(session({
+  store: new PgSession({
+    pool,
+    tableName: 'session',
+    createTableIfMissing: true
+  }),
+  secret: sessionSecret || 'dev-only-insecure-secret-change-this',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
 
 (async () => {
-  const server = await registerRoutes(app);
+  // Ensure database driver/client initialized before proceeding
+  await ready;
+  try {
+    const dependencies = createProductionDependencies();
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    // Setup authentication with Passport
+    setupAuthentication(app, dependencies.storage);
+    logger.info('Authentication system initialized');
 
-    res.status(status).json({ message });
-    throw err;
-  });
+    // Register authentication routes
+    app.use('/api/auth', createAuthRoutes(dependencies.storage));
+    logger.info('Authentication routes registered');
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+    // Register application routes
+    const server = await registerRoutes(app, dependencies);
+    logger.info('Application routes registered');
+
+    // 404 handler for unmatched routes (must be after all routes)
+    app.use(notFoundHandler);
+
+    // Global error handler (must be last)
+    app.use(errorHandler);
+
+    // Setup Vite in development, serve static in production
+    // This must be after all API routes to avoid conflicts
+    if (app.get("env") === "development") {
+      await setupVite(app, server);
+    } else {
+      serveStatic(app);
+    }
+
+    // Start server
+    const port = parseInt(process.env.PORT || '5000', 10);
+    server.listen({
+      port,
+      host: "0.0.0.0",
+      reusePort: true,
+    }, () => {
+      logger.info(`Server started successfully`, {
+        port,
+        environment: process.env.NODE_ENV || 'development'
+      });
+    });
+  } catch (error) {
+    logger.error('Failed to start server', { error });
+    process.exit(1);
   }
-
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
 })();

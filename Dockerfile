@@ -1,93 +1,155 @@
-# Multi-stage Dockerfile for Dehadi.co.in Worker Marketplace Platform
-# Optimized for both local development and production deployment
+# ============================================================================
+# HireConnect - Multi-stage Docker Build
+# ============================================================================
+# Optimized for both development and production environments
+# Supports hot-reload in development, optimized builds in production
+# ============================================================================
 
-# ============================================================================
-# Stage 1: Build Frontend (Vite)
-# ============================================================================
-FROM node:20-alpine AS frontend-builder
+# ----------------------------------------------------------------------------
+# Stage 1: Base Image with Dependencies
+# ----------------------------------------------------------------------------
+FROM node:20-alpine AS base
+
+# Install system dependencies required for node-gyp and native modules
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    libc6-compat
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production && \
+# ----------------------------------------------------------------------------
+# Stage 2: Development Dependencies
+# ----------------------------------------------------------------------------
+FROM base AS deps-dev
+
+# Install all dependencies (including devDependencies)
+# Use package-lock.json if present for reproducible installs.
+# The previous command `npm clean install` was invalid and caused build failures.
+RUN if [ -f package-lock.json ]; then \
+        npm ci; \
+    else \
+        npm install; \
+    fi
+
+# ----------------------------------------------------------------------------
+# Stage 3: Production Dependencies
+# ----------------------------------------------------------------------------
+FROM base AS deps-prod
+
+# Install only production dependencies (omit dev) using lock file if available
+RUN if [ -f package-lock.json ]; then \
+        npm ci --omit=dev; \
+    else \
+        npm install --omit=dev; \
+    fi && \
     npm cache clean --force
 
-# Copy frontend source code
-COPY client ./client
-COPY shared ./shared
-COPY vite.config.ts ./
+# ----------------------------------------------------------------------------
+# Stage 4: Builder - Build Application
+# ----------------------------------------------------------------------------
+FROM deps-dev AS builder
+
+# Copy configuration files
 COPY tsconfig.json ./
+COPY vite.config.ts ./
 COPY postcss.config.js ./
 COPY tailwind.config.ts ./
+COPY drizzle.config.ts ./
 
-# Build frontend
-RUN npm run build
-
-# ============================================================================
-# Stage 2: Build Backend (Express)
-# ============================================================================
-FROM node:20-alpine AS backend-builder
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install all dependencies (including devDependencies for build)
-RUN npm ci
-
-# Copy backend source code
+# Copy source code
+COPY client ./client
 COPY server ./server
 COPY shared ./shared
-COPY tsconfig.json ./
+COPY db ./db
 
-# Build backend with esbuild
+# Build frontend and backend
+# This creates dist/client (frontend) and dist/index.js (backend)
 RUN npm run build
 
-# ============================================================================
-# Stage 3: Production Image
-# ============================================================================
+# ----------------------------------------------------------------------------
+# Stage 5: Development Image
+# ----------------------------------------------------------------------------
+FROM base AS development
+
+# Set environment to development
+ENV NODE_ENV=development
+
+# Copy all dependencies
+COPY --from=deps-dev /app/node_modules ./node_modules
+
+# Copy configuration files
+COPY tsconfig.json ./
+COPY vite.config.ts ./
+COPY postcss.config.js ./
+COPY tailwind.config.ts ./
+COPY drizzle.config.ts ./
+
+# Copy source code (will be overridden by volume mounts in docker-compose)
+COPY client ./client
+COPY server ./server
+COPY shared ./shared
+COPY db ./db
+
+# Expose application port
+EXPOSE 5000
+
+# Health check for development
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:5000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)}).on('error', () => process.exit(1))"
+
+# Start development server with hot-reload
+CMD ["npm", "run", "dev"]
+
+# ----------------------------------------------------------------------------
+# Stage 6: Production Image
+# ----------------------------------------------------------------------------
 FROM node:20-alpine AS production
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
 
 WORKDIR /app
 
-# Install production dependencies only
-COPY package*.json ./
-RUN npm ci --only=production && \
-    npm cache clean --force
+# Set environment to production
+ENV NODE_ENV=production
 
-# Copy built frontend from frontend-builder stage
-COPY --from=frontend-builder /app/dist ./dist
+# Copy production dependencies
+COPY --from=deps-prod /app/node_modules ./node_modules
 
-# Copy built backend from backend-builder stage
-COPY --from=backend-builder /app/dist/index.js ./dist/
+# Copy built application from builder stage
+COPY --from=builder /app/dist ./dist
 
 # Copy necessary runtime files
 COPY shared ./shared
 COPY drizzle.config.ts ./
 
-# Create a non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+# Copy package.json for metadata
+COPY package*.json ./
 
-# Change ownership of app files
+# Change ownership to non-root user
 RUN chown -R nodejs:nodejs /app
 
 # Switch to non-root user
 USER nodejs
 
-# Expose port 5000 (standard for this application)
+# Expose application port
 EXPOSE 5000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:5000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+# Health check for production
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:5000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)}).on('error', () => process.exit(1))"
 
-# Set production environment
-ENV NODE_ENV=production
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
 
-# Start the application
+# Start production server
 CMD ["node", "dist/index.js"]

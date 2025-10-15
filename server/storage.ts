@@ -1,7 +1,7 @@
-import { 
-  type User, 
-  type InsertUser, 
-  type Job, 
+import {
+  type User,
+  type InsertUser,
+  type Job,
   type InsertJob,
   type JobApplication,
   type InsertJobApplication,
@@ -18,6 +18,7 @@ import {
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq, and, or, desc } from "drizzle-orm";
+import { logger } from "./lib/logger";
 
 export interface IStorage {
   // User methods
@@ -324,18 +325,22 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  protected get db() {
+    return db;
+  }
+
   async getUser(id: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    const result = await this.db.select().from(users).where(eq(users.id, id)).limit(1);
     return result[0];
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
+    const result = await this.db.select().from(users).where(eq(users.username, username)).limit(1);
     return result[0];
   }
 
   async createUser(user: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(user).returning();
+    const result = await this.db.insert(users).values(user).returning();
     return result[0];
   }
 
@@ -347,36 +352,36 @@ export class DatabaseStorage implements IStorage {
     if (filters?.status) {
       conditions.push(eq(jobs.status, filters.status));
     }
-    
+
     let result;
     if (conditions.length > 0) {
-      result = await db.select().from(jobs)
+      result = await this.db.select().from(jobs)
         .where(and(...conditions))
         .orderBy(desc(jobs.createdAt));
     } else {
-      result = await db.select().from(jobs)
+      result = await this.db.select().from(jobs)
         .orderBy(desc(jobs.createdAt));
     }
-    
+
     if (filters?.location) {
       result = result.filter(job => job.location.includes(filters.location!));
     }
-    
+
     return result;
   }
 
   async getJob(id: string): Promise<Job | undefined> {
-    const result = await db.select().from(jobs).where(eq(jobs.id, id)).limit(1);
+    const result = await this.db.select().from(jobs).where(eq(jobs.id, id)).limit(1);
     return result[0];
   }
 
   async createJob(job: InsertJob): Promise<Job> {
-    const result = await db.insert(jobs).values(job).returning();
+    const result = await this.db.insert(jobs).values(job).returning();
     return result[0];
   }
 
   async updateJobStatus(id: string, status: string): Promise<Job | undefined> {
-    const result = await db.update(jobs)
+    const result = await this.db.update(jobs)
       .set({ status })
       .where(eq(jobs.id, id))
       .returning();
@@ -384,9 +389,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async assignWorkerToJob(jobId: string, workerId: string): Promise<Job | undefined> {
-    const result = await db.update(jobs)
-      .set({ 
-        assignedWorkerId: workerId, 
+    const result = await this.db.update(jobs)
+      .set({
+        assignedWorkerId: workerId,
         status: "in_progress",
         startedAt: new Date()
       })
@@ -396,8 +401,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async markJobCompleted(jobId: string): Promise<Job | undefined> {
-    const result = await db.update(jobs)
-      .set({ 
+    const result = await this.db.update(jobs)
+      .set({
         status: "awaiting_payment",
         completedAt: new Date()
       })
@@ -407,26 +412,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getApplicationsForJob(jobId: string): Promise<JobApplication[]> {
-    return await db.select()
+    return await this.db.select()
       .from(jobApplications)
       .where(eq(jobApplications.jobId, jobId))
       .orderBy(desc(jobApplications.createdAt));
   }
 
   async getApplicationsForWorker(workerId: string): Promise<JobApplication[]> {
-    return await db.select()
+    return await this.db.select()
       .from(jobApplications)
       .where(eq(jobApplications.workerId, workerId))
       .orderBy(desc(jobApplications.createdAt));
   }
 
   async createApplication(application: InsertJobApplication): Promise<JobApplication> {
-    const result = await db.insert(jobApplications).values(application).returning();
+    const result = await this.db.insert(jobApplications).values(application).returning();
     return result[0];
   }
 
   async updateApplicationStatus(id: string, status: string): Promise<JobApplication | undefined> {
-    const result = await db.update(jobApplications)
+    const result = await this.db.update(jobApplications)
       .set({ status })
       .where(eq(jobApplications.id, id))
       .returning();
@@ -434,7 +439,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMessagesForConversation(userId1: string, userId2: string): Promise<Message[]> {
-    return await db.select()
+    return await this.db.select()
       .from(messages)
       .where(
         or(
@@ -446,44 +451,44 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMessage(message: InsertMessage): Promise<Message> {
-    const result = await db.insert(messages).values(message).returning();
+    const result = await this.db.insert(messages).values(message).returning();
     return result[0];
   }
 
   async markMessageAsRead(id: string): Promise<void> {
-    await db.update(messages)
+    await this.db.update(messages)
       .set({ isRead: true })
       .where(eq(messages.id, id));
   }
 
   async getPayment(id: string): Promise<Payment | undefined> {
-    const result = await db.select().from(payments).where(eq(payments.id, id)).limit(1);
+    const result = await this.db.select().from(payments).where(eq(payments.id, id)).limit(1);
     return result[0];
   }
 
   async getPaymentForJob(jobId: string): Promise<Payment | undefined> {
-    const result = await db.select().from(payments).where(eq(payments.jobId, jobId)).limit(1);
+    const result = await this.db.select().from(payments).where(eq(payments.jobId, jobId)).limit(1);
     return result[0];
   }
 
   async getPaymentByOrderId(razorpayOrderId: string): Promise<Payment | undefined> {
-    const result = await db.select().from(payments).where(eq(payments.razorpayOrderId, razorpayOrderId)).limit(1);
+    const result = await this.db.select().from(payments).where(eq(payments.razorpayOrderId, razorpayOrderId)).limit(1);
     return result[0];
   }
 
   async createPayment(payment: InsertPayment): Promise<Payment> {
-    const result = await db.insert(payments).values(payment).returning();
+    const result = await this.db.insert(payments).values(payment).returning();
     return result[0];
   }
 
   async updatePaymentStatus(
-    id: string, 
-    status: string, 
-    razorpayPaymentId?: string, 
+    id: string,
+    status: string,
+    razorpayPaymentId?: string,
     razorpaySignature?: string
   ): Promise<Payment | undefined> {
     const updateData: any = { status };
-    
+
     if (razorpayPaymentId) {
       updateData.razorpayPaymentId = razorpayPaymentId;
     }
@@ -493,8 +498,8 @@ export class DatabaseStorage implements IStorage {
     if (status === "completed") {
       updateData.paidAt = new Date();
     }
-    
-    const result = await db.update(payments)
+
+    const result = await this.db.update(payments)
       .set(updateData)
       .where(eq(payments.id, id))
       .returning();
@@ -509,7 +514,7 @@ export class DatabaseStorage implements IStorage {
   ): Promise<{ payment: Payment; job: Job } | null> {
     try {
       // Use database transaction to ensure atomicity
-      const result = await db.transaction(async (tx) => {
+      const result = await this.db.transaction(async (tx) => {
         // First, verify job is in correct state
         const [job] = await tx.select().from(jobs).where(eq(jobs.id, jobId)).limit(1);
         if (!job || job.status !== "awaiting_payment") {
@@ -546,7 +551,7 @@ export class DatabaseStorage implements IStorage {
 
       return result;
     } catch (error) {
-      console.error("Transaction failed in completePaymentTransaction:", error);
+      logger.error("Transaction failed in completePaymentTransaction", { error });
       return null;
     }
   }

@@ -1,19 +1,24 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  passwordHash: text("password_hash").notNull(),
+  fullName: text("full_name").notNull(),
+  phone: text("phone").notNull(),
   role: text("role").notNull().default("worker"), // worker, employer, ngo, admin
   language: text("language").default("en"),
   location: text("location"),
   skills: text("skills").array(),
   aadhar: text("aadhar"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  roleIdx: index("users_role_idx").on(table.role),
+  locationIdx: index("users_location_idx").on(table.location),
+}));
 
 export const jobs = pgTable("jobs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -33,7 +38,14 @@ export const jobs = pgTable("jobs", {
   startedAt: timestamp("started_at"),
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  employerIdIdx: index("jobs_employer_id_idx").on(table.employerId),
+  assignedWorkerIdIdx: index("jobs_assigned_worker_id_idx").on(table.assignedWorkerId),
+  statusIdx: index("jobs_status_idx").on(table.status),
+  workTypeIdx: index("jobs_work_type_idx").on(table.workType),
+  locationIdx: index("jobs_location_idx").on(table.location),
+  createdAtIdx: index("jobs_created_at_idx").on(table.createdAt),
+}));
 
 export const jobApplications = pgTable("job_applications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -42,7 +54,11 @@ export const jobApplications = pgTable("job_applications", {
   status: text("status").notNull().default("pending"), // pending, accepted, rejected, withdrawn
   message: text("message"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  jobIdIdx: index("job_applications_job_id_idx").on(table.jobId),
+  workerIdIdx: index("job_applications_worker_id_idx").on(table.workerId),
+  statusIdx: index("job_applications_status_idx").on(table.status),
+}));
 
 export const messages = pgTable("messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -52,7 +68,13 @@ export const messages = pgTable("messages", {
   content: text("content").notNull(),
   isRead: boolean("is_read").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  senderIdIdx: index("messages_sender_id_idx").on(table.senderId),
+  receiverIdIdx: index("messages_receiver_id_idx").on(table.receiverId),
+  jobIdIdx: index("messages_job_id_idx").on(table.jobId),
+  isReadIdx: index("messages_is_read_idx").on(table.isRead),
+  createdAtIdx: index("messages_created_at_idx").on(table.createdAt),
+}));
 
 export const payments = pgTable("payments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -69,7 +91,13 @@ export const payments = pgTable("payments", {
   failureReason: text("failure_reason"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   paidAt: timestamp("paid_at"),
-});
+}, (table) => ({
+  jobIdIdx: index("payments_job_id_idx").on(table.jobId),
+  employerIdIdx: index("payments_employer_id_idx").on(table.employerId),
+  workerIdIdx: index("payments_worker_id_idx").on(table.workerId),
+  statusIdx: index("payments_status_idx").on(table.status),
+  razorpayOrderIdIdx: index("payments_razorpay_order_id_idx").on(table.razorpayOrderId),
+}));
 
 // User schemas
 export const insertUserSchema = createInsertSchema(users).omit({

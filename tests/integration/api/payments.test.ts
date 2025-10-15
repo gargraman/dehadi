@@ -5,11 +5,13 @@ import { eq } from 'drizzle-orm';
 import { registerRoutes } from '../../../server/routes';
 import { testDb, cleanupDatabase, closeDatabase } from '../../setup/test-db';
 import { users, jobs, payments } from '../../../shared/schema';
-import { 
-  createPaymentFlowMocks, 
+import {
+  createPaymentFlowMocks,
   setupRazorpayEnv,
-  createMockRazorpay 
+  createMockRazorpay
 } from '../../mocks/razorpay';
+import { createTestDependencies } from '../../fixtures/test-dependencies';
+import { TestDataFactory } from '../../fixtures/test-data';
 import type { Server } from 'http';
 
 describe('Payment API Integration Tests', () => {
@@ -18,14 +20,17 @@ describe('Payment API Integration Tests', () => {
   let testEmployer: any;
   let testWorker: any;
   let testJob: any;
+  let dependencies: ReturnType<typeof createTestDependencies>;
+  let dataFactory: TestDataFactory;
 
   beforeAll(async () => {
-    // Setup Razorpay environment
-    setupRazorpayEnv();
-    
+    // Setup test dependencies with mocked payment client
+    dependencies = createTestDependencies();
+    dataFactory = new TestDataFactory(dependencies.storage);
+
     app = express();
     app.use(express.json());
-    server = await registerRoutes(app);
+    server = await registerRoutes(app, dependencies);
   });
 
   afterAll(async () => {
@@ -35,50 +40,20 @@ describe('Payment API Integration Tests', () => {
 
   beforeEach(async () => {
     await cleanupDatabase();
-    
-    // Create test employer
-    const [employer] = await testDb.insert(users).values({
-      username: 'test_employer',
-      password: 'test123',
-      role: 'employer',
-      language: 'en',
-      location: 'Mumbai',
-      skills: [],
-      aadhar: null
-    }).returning();
-    testEmployer = employer;
 
-    // Create test worker
-    const [worker] = await testDb.insert(users).values({
-      username: 'test_worker',
-      password: 'test123',
-      role: 'worker',
-      language: 'hi',
-      location: 'Mumbai',
-      skills: ['mason'],
-      aadhar: '123456789012'
-    }).returning();
-    testWorker = worker;
+    // Reset payment client mocks
+    dependencies.testPaymentClient.reset();
 
-    // Create test job in awaiting_payment status
-    const [job] = await testDb.insert(jobs).values({
-      employerId: testEmployer.id,
-      title: 'Test Job',
-      description: 'Test description',
-      workType: 'mason',
-      location: 'Mumbai',
-      locationLat: '19.0760',
-      locationLng: '72.8777',
-      wageType: 'daily',
-      wage: 800,
-      headcount: 1,
-      skills: ['bricklaying'],
-      status: 'awaiting_payment',
-      assignedWorkerId: testWorker.id,
-      startedAt: new Date(Date.now() - 86400000),
-      completedAt: new Date()
-    }).returning();
-    testJob = job;
+    // Create test data using the data factory
+    const workflow = await dataFactory.createJobWorkflow({
+      jobStatus: "awaiting_payment",
+      withApplication: true,
+      withAssignment: true,
+    });
+
+    testEmployer = workflow.employer;
+    testWorker = workflow.worker;
+    testJob = workflow.job;
   });
 
   describe('POST /api/payments/create-order', () => {
@@ -133,23 +108,18 @@ describe('Payment API Integration Tests', () => {
     let mockPayment: ReturnType<typeof createPaymentFlowMocks>;
 
     beforeEach(async () => {
-      // Create a payment in the database
+      // Create a payment in the database using data factory
       mockPayment = createPaymentFlowMocks();
-      
-      const [createdPayment] = await testDb.insert(payments).values({
-        jobId: testJob.id,
-        employerId: testEmployer.id,
-        workerId: testWorker.id,
-        amount: mockPayment.amount,
-        currency: 'INR',
-        status: 'pending',
-        paymentMethod: 'upi',
-        razorpayOrderId: mockPayment.orderId,
-        razorpayPaymentId: null,
-        razorpaySignature: null,
-        failureReason: null
-      }).returning();
-      payment = createdPayment;
+
+      payment = await dataFactory.createTestPayment(
+        testJob.id,
+        testEmployer.id,
+        testWorker.id,
+        {
+          amount: mockPayment.amount,
+          razorpayOrderId: mockPayment.orderId,
+        }
+      );
     });
 
     it('should verify payment with valid signature', async () => {
@@ -219,20 +189,18 @@ describe('Payment API Integration Tests', () => {
 
   describe('GET /api/payments/job/:jobId', () => {
     it('should retrieve payment for a job', async () => {
-      // Create a payment for the job
-      const [payment] = await testDb.insert(payments).values({
-        jobId: testJob.id,
-        employerId: testEmployer.id,
-        workerId: testWorker.id,
-        amount: 80000,
-        currency: 'INR',
-        status: 'completed',
-        paymentMethod: 'upi',
-        razorpayOrderId: 'order_test123',
-        razorpayPaymentId: 'pay_test456',
-        razorpaySignature: 'sig_test789',
-        failureReason: null
-      }).returning();
+      // Create a payment for the job using data factory
+      const payment = await dataFactory.createTestPayment(
+        testJob.id,
+        testEmployer.id,
+        testWorker.id,
+        {
+          status: 'completed',
+          razorpayOrderId: 'order_test123',
+          razorpayPaymentId: 'pay_test456',
+          razorpaySignature: 'sig_test789',
+        }
+      );
 
       const response = await request(app)
         .get(`/api/payments/job/${testJob.id}`)
@@ -245,24 +213,18 @@ describe('Payment API Integration Tests', () => {
     });
 
     it('should return 404 for job without payment', async () => {
-      // Create a new job without payment
-      const [newJob] = await testDb.insert(jobs).values({
-        employerId: testEmployer.id,
+      // Create a new job without payment using data factory
+      const newJob = await dataFactory.createTestJob(testEmployer.id, {
         title: 'New Job',
         description: 'New job without payment',
         workType: 'plumber',
         location: 'Delhi',
         locationLat: '28.7041',
         locationLng: '77.1025',
-        wageType: 'daily',
         wage: 1000,
-        headcount: 1,
         skills: ['pipe_fitting'],
         status: 'open',
-        assignedWorkerId: null,
-        startedAt: null,
-        completedAt: null
-      }).returning();
+      });
 
       const response = await request(app)
         .get(`/api/payments/job/${newJob.id}`)

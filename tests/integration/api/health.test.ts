@@ -3,6 +3,7 @@ import request from 'supertest';
 import express, { Express } from 'express';
 import { registerRoutes } from '../../../server/routes';
 import { closeDatabase } from '../../setup/test-db';
+import { createTestDependencies } from '../../fixtures/test-dependencies';
 import type { Server } from 'http';
 
 describe('Health Check API', () => {
@@ -10,9 +11,11 @@ describe('Health Check API', () => {
   let server: Server;
 
   beforeAll(async () => {
+    const dependencies = createTestDependencies();
+
     app = express();
     app.use(express.json());
-    server = await registerRoutes(app);
+    server = await registerRoutes(app, dependencies);
   });
 
   afterAll(async () => {

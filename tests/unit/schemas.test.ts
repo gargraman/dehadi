@@ -11,7 +11,9 @@ describe('Schema Validation - User', () => {
   it('should validate a valid worker user', () => {
     const validWorker = {
       username: 'rajesh_kumar',
-      password: 'secure123',
+      passwordHash: '$2a$10$rZ4qJ3K.2hKzP1W9fHN0O.YvQ9x6Y5L7xN6N8J5Q8K9P0L1M2N3O4',
+      fullName: 'Rajesh Kumar',
+      phone: '9876543210',
       role: 'worker',
       language: 'hi',
       location: 'Mumbai',
@@ -26,7 +28,9 @@ describe('Schema Validation - User', () => {
   it('should validate a valid employer user', () => {
     const validEmployer = {
       username: 'arjun_malhotra',
-      password: 'secure123',
+      passwordHash: '$2a$10$rZ4qJ3K.2hKzP1W9fHN0O.YvQ9x6Y5L7xN6N8J5Q8K9P0L1M2N3O4',
+      fullName: 'Arjun Malhotra',
+      phone: '9123456789',
       role: 'employer',
       language: 'en',
       location: 'Delhi',
@@ -40,7 +44,9 @@ describe('Schema Validation - User', () => {
 
   it('should reject user without username', () => {
     const invalidUser = {
-      password: 'secure123',
+      passwordHash: '$2a$10$rZ4qJ3K.2hKzP1W9fHN0O.YvQ9x6Y5L7xN6N8J5Q8K9P0L1M2N3O4',
+      fullName: 'Test User',
+      phone: '9999999999',
       role: 'worker'
     };
 
@@ -51,6 +57,8 @@ describe('Schema Validation - User', () => {
   it('should reject user without password', () => {
     const invalidUser = {
       username: 'test_user',
+      fullName: 'Test User',
+      phone: '9999999999',
       role: 'worker'
     };
 
