@@ -144,3 +144,9 @@ export const insertPaymentSchema = createInsertSchema(payments).omit({
 
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type Payment = typeof payments.$inferSelect;
+
+// Enhanced types for JOIN queries
+export type EnrichedJobApplication = JobApplication & {
+  job: Job;
+  worker: User;
+};

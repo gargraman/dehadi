@@ -17,15 +17,21 @@ import {
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, and, or, desc } from "drizzle-orm";
+import { eq, and, or, desc, ne, isNull } from "drizzle-orm";
 import { logger } from "./lib/logger";
+
+// Enhanced JobApplication type for methods that return JOIN data
+export type EnrichedJobApplication = JobApplication & {
+  job: Job;
+  worker: User;
+};
 
 export interface IStorage {
   // User methods
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   // Job methods
   getJobs(filters?: { workType?: string; location?: string; status?: string }): Promise<Job[]>;
   getJob(id: string): Promise<Job | undefined>;
@@ -33,25 +39,27 @@ export interface IStorage {
   updateJobStatus(id: string, status: string): Promise<Job | undefined>;
   assignWorkerToJob(jobId: string, workerId: string): Promise<Job | undefined>;
   markJobCompleted(jobId: string): Promise<Job | undefined>;
-  
+
   // Job Application methods
-  getApplicationsForJob(jobId: string): Promise<JobApplication[]>;
-  getApplicationsForWorker(workerId: string): Promise<JobApplication[]>;
+  getApplicationsForJob(jobId: string): Promise<EnrichedJobApplication[]>;
+  getApplicationsForWorker(workerId: string): Promise<EnrichedJobApplication[]>;
+  getApplicationById(id: string): Promise<JobApplication | undefined>;
   createApplication(application: InsertJobApplication): Promise<JobApplication>;
   updateApplicationStatus(id: string, status: string): Promise<JobApplication | undefined>;
-  
+
   // Message methods
   getMessagesForConversation(userId1: string, userId2: string): Promise<Message[]>;
+  getMessage(id: string): Promise<Message | undefined>;
   createMessage(message: InsertMessage): Promise<Message>;
   markMessageAsRead(id: string): Promise<void>;
-  
+
   // Payment methods
   getPayment(id: string): Promise<Payment | undefined>;
   getPaymentForJob(jobId: string): Promise<Payment | undefined>;
   getPaymentByOrderId(razorpayOrderId: string): Promise<Payment | undefined>;
   createPayment(payment: InsertPayment): Promise<Payment>;
   updatePaymentStatus(id: string, status: string, razorpayPaymentId?: string, razorpaySignature?: string): Promise<Payment | undefined>;
-  
+
   // Transactional methods
   completePaymentTransaction(
     paymentId: string,
@@ -59,6 +67,13 @@ export interface IStorage {
     razorpayPaymentId: string,
     razorpaySignature: string
   ): Promise<{ payment: Payment; job: Job } | null>;
+
+  // Atomic application acceptance with job assignment
+  acceptApplicationWithJobAssignment(
+    applicationId: string,
+    jobId: string,
+    workerId: string
+  ): Promise<{ application: JobApplication; job: Job } | null>;
 }
 
 export class MemStorage implements IStorage {
@@ -151,16 +166,32 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
-  async getApplicationsForJob(jobId: string): Promise<JobApplication[]> {
-    return Array.from(this.applications.values())
+  async getApplicationsForJob(jobId: string): Promise<EnrichedJobApplication[]> {
+    const applications = Array.from(this.applications.values())
       .filter(app => app.jobId === jobId)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    return applications.map(app => ({
+      ...app,
+      job: this.jobs.get(app.jobId)!,
+      worker: this.users.get(app.workerId)!
+    }));
   }
 
-  async getApplicationsForWorker(workerId: string): Promise<JobApplication[]> {
-    return Array.from(this.applications.values())
+  async getApplicationsForWorker(workerId: string): Promise<EnrichedJobApplication[]> {
+    const applications = Array.from(this.applications.values())
       .filter(app => app.workerId === workerId)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    return applications.map(app => ({
+      ...app,
+      job: this.jobs.get(app.jobId)!,
+      worker: this.users.get(app.workerId)!
+    }));
+  }
+
+  async getApplicationById(id: string): Promise<JobApplication | undefined> {
+    return this.applications.get(id);
   }
 
   async createApplication(insertApplication: InsertJobApplication): Promise<JobApplication> {
@@ -205,6 +236,10 @@ export class MemStorage implements IStorage {
     };
     this.messages.set(id, message);
     return message;
+  }
+
+  async getMessage(id: string): Promise<Message | undefined> {
+    return this.messages.get(id);
   }
 
   async markMessageAsRead(id: string): Promise<void> {
@@ -322,6 +357,43 @@ export class MemStorage implements IStorage {
 
     return { payment: updatedPayment, job: updatedJob };
   }
+
+  async acceptApplicationWithJobAssignment(
+    applicationId: string,
+    jobId: string,
+    workerId: string
+  ): Promise<{ application: JobApplication; job: Job } | null> {
+    const application = this.applications.get(applicationId);
+    const job = this.jobs.get(jobId);
+
+    if (!application || !job) return null;
+    if (job.status !== "open" || job.assignedWorkerId) return null;
+    if (application.status !== "pending") return null;
+
+    // Update both application and job atomically (in-memory, so naturally atomic)
+    const updatedApplication = {
+      ...application,
+      status: "accepted"
+    };
+    const updatedJob = {
+      ...job,
+      assignedWorkerId: workerId,
+      status: "in_progress",
+      startedAt: new Date()
+    };
+
+    // Reject all other pending applications for this job
+    Array.from(this.applications.values())
+      .filter(app => app.jobId === jobId && app.status === "pending" && app.id !== applicationId)
+      .forEach(app => {
+        this.applications.set(app.id, { ...app, status: "rejected" });
+      });
+
+    this.applications.set(applicationId, updatedApplication);
+    this.jobs.set(jobId, updatedJob);
+
+    return { application: updatedApplication, job: updatedJob };
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -389,15 +461,43 @@ export class DatabaseStorage implements IStorage {
   }
 
   async assignWorkerToJob(jobId: string, workerId: string): Promise<Job | undefined> {
-    const result = await this.db.update(jobs)
-      .set({
-        assignedWorkerId: workerId,
-        status: "in_progress",
-        startedAt: new Date()
-      })
-      .where(eq(jobs.id, jobId))
-      .returning();
-    return result[0];
+    try {
+      // Use transaction to ensure atomicity and prevent race conditions
+      const result = await this.db.transaction(async (tx) => {
+        // First, check if job is still available for assignment
+        const [job] = await tx.select().from(jobs).where(eq(jobs.id, jobId)).limit(1);
+
+        if (!job) {
+          return null;
+        }
+
+        // Prevent race condition: ensure job is still open and unassigned
+        if (job.status !== "open" || job.assignedWorkerId) {
+          return null;
+        }
+
+        // Assign worker atomically
+        const [updatedJob] = await tx.update(jobs)
+          .set({
+            assignedWorkerId: workerId,
+            status: "in_progress",
+            startedAt: new Date()
+          })
+          .where(and(
+            eq(jobs.id, jobId),
+            eq(jobs.status, "open"),
+            isNull(jobs.assignedWorkerId)
+          ))
+          .returning();
+
+        return updatedJob;
+      });
+
+      return result;
+    } catch (error) {
+      logger.error("Transaction failed in assignWorkerToJob", { error });
+      return undefined;
+    }
   }
 
   async markJobCompleted(jobId: string): Promise<Job | undefined> {
@@ -411,18 +511,67 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getApplicationsForJob(jobId: string): Promise<JobApplication[]> {
-    return await this.db.select()
+  async getApplicationsForJob(jobId: string): Promise<EnrichedJobApplication[]> {
+    const results = await this.db.select({
+      id: jobApplications.id,
+      jobId: jobApplications.jobId,
+      workerId: jobApplications.workerId,
+      status: jobApplications.status,
+      message: jobApplications.message,
+      createdAt: jobApplications.createdAt,
+      job: jobs,
+      worker: users
+    })
       .from(jobApplications)
+      .leftJoin(jobs, eq(jobApplications.jobId, jobs.id))
+      .leftJoin(users, eq(jobApplications.workerId, users.id))
       .where(eq(jobApplications.jobId, jobId))
       .orderBy(desc(jobApplications.createdAt));
+
+    return results.map(row => ({
+      id: row.id,
+      jobId: row.jobId,
+      workerId: row.workerId,
+      status: row.status,
+      message: row.message,
+      createdAt: row.createdAt,
+      job: row.job!,
+      worker: row.worker!
+    }));
   }
 
-  async getApplicationsForWorker(workerId: string): Promise<JobApplication[]> {
-    return await this.db.select()
+  async getApplicationsForWorker(workerId: string): Promise<EnrichedJobApplication[]> {
+    const results = await this.db.select({
+      id: jobApplications.id,
+      jobId: jobApplications.jobId,
+      workerId: jobApplications.workerId,
+      status: jobApplications.status,
+      message: jobApplications.message,
+      createdAt: jobApplications.createdAt,
+      job: jobs,
+      worker: users
+    })
       .from(jobApplications)
+      .leftJoin(jobs, eq(jobApplications.jobId, jobs.id))
+      .leftJoin(users, eq(jobApplications.workerId, users.id))
       .where(eq(jobApplications.workerId, workerId))
       .orderBy(desc(jobApplications.createdAt));
+
+    return results.map(row => ({
+      id: row.id,
+      jobId: row.jobId,
+      workerId: row.workerId,
+      status: row.status,
+      message: row.message,
+      createdAt: row.createdAt,
+      job: row.job!,
+      worker: row.worker!
+    }));
+  }
+
+  async getApplicationById(id: string): Promise<JobApplication | undefined> {
+    const result = await this.db.select().from(jobApplications).where(eq(jobApplications.id, id)).limit(1);
+    return result[0];
   }
 
   async createApplication(application: InsertJobApplication): Promise<JobApplication> {
@@ -452,6 +601,11 @@ export class DatabaseStorage implements IStorage {
 
   async createMessage(message: InsertMessage): Promise<Message> {
     const result = await this.db.insert(messages).values(message).returning();
+    return result[0];
+  }
+
+  async getMessage(id: string): Promise<Message | undefined> {
+    const result = await this.db.select().from(messages).where(eq(messages.id, id)).limit(1);
     return result[0];
   }
 
@@ -552,6 +706,69 @@ export class DatabaseStorage implements IStorage {
       return result;
     } catch (error) {
       logger.error("Transaction failed in completePaymentTransaction", { error });
+      return null;
+    }
+  }
+
+  async acceptApplicationWithJobAssignment(
+    applicationId: string,
+    jobId: string,
+    workerId: string
+  ): Promise<{ application: JobApplication; job: Job } | null> {
+    try {
+      // Use database transaction to ensure atomicity
+      const result = await this.db.transaction(async (tx) => {
+        // First, verify application and job are in correct state
+        const [application] = await tx.select().from(jobApplications).where(eq(jobApplications.id, applicationId)).limit(1);
+        const [job] = await tx.select().from(jobs).where(eq(jobs.id, jobId)).limit(1);
+
+        if (!application || !job) {
+          return null;
+        }
+
+        if (job.status !== "open" || job.assignedWorkerId || application.status !== "pending") {
+          return null;
+        }
+
+        // Accept the application
+        const [updatedApplication] = await tx.update(jobApplications)
+          .set({ status: "accepted" })
+          .where(eq(jobApplications.id, applicationId))
+          .returning();
+
+        if (!updatedApplication) {
+          return null;
+        }
+
+        // Assign worker to job and update status
+        const [updatedJob] = await tx.update(jobs)
+          .set({
+            assignedWorkerId: workerId,
+            status: "in_progress",
+            startedAt: new Date()
+          })
+          .where(eq(jobs.id, jobId))
+          .returning();
+
+        if (!updatedJob) {
+          return null;
+        }
+
+        // Reject all other pending applications for this job
+        await tx.update(jobApplications)
+          .set({ status: "rejected" })
+          .where(and(
+            eq(jobApplications.jobId, jobId),
+            eq(jobApplications.status, "pending"),
+            ne(jobApplications.id, applicationId)
+          ));
+
+        return { application: updatedApplication, job: updatedJob };
+      });
+
+      return result;
+    } catch (error) {
+      logger.error("Transaction failed in acceptApplicationWithJobAssignment", { error });
       return null;
     }
   }

@@ -17,6 +17,9 @@ import Register from "@/pages/Register";
 import JobDetails from "@/pages/JobDetails";
 import PostJob from "@/pages/PostJob";
 import PaymentPage from "@/pages/PaymentPage";
+import MyApplications from "@/pages/MyApplications";
+import JobApplications from "@/pages/JobApplications";
+import MyJobs from "@/pages/MyJobs";
 import NotFound from "@/pages/not-found";
 import { Loader2 } from "lucide-react";
 
@@ -105,8 +108,17 @@ function Router() {
       <Route path="/post-job">
         {() => <ProtectedRoute component={PostJob} />}
       </Route>
-      <Route path="/jobs/:id/payment">
+      <Route path="/payment">
         {() => <ProtectedRoute component={PaymentPage} />}
+      </Route>
+      <Route path="/my-applications">
+        {() => <ProtectedRoute component={MyApplications} />}
+      </Route>
+      <Route path="/jobs/:jobId/applications">
+        {() => <ProtectedRoute component={JobApplications} />}
+      </Route>
+      <Route path="/my-jobs">
+        {() => <ProtectedRoute component={MyJobs} />}
       </Route>
       <Route component={NotFound} />
     </Switch>

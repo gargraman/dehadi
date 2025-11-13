@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useAuth } from '@/lib/auth';
-import type { Job, JobApplication } from '@shared/schema';
+import type { Job, JobApplication, User, EnrichedJobApplication } from '@shared/schema';
 
 interface JobFilters {
   workType?: string;
@@ -98,7 +98,7 @@ export function useCreateApplication() {
 export function useJobApplications(jobId: string | null) {
   return useQuery({
     queryKey: ['/api/jobs', jobId, 'applications'],
-    queryFn: async (): Promise<JobApplication[]> => {
+    queryFn: async (): Promise<EnrichedJobApplication[]> => {
       if (!jobId) throw new Error('No job ID provided');
 
       const res = await fetch(`/api/jobs/${jobId}/applications`, { credentials: 'include' });
@@ -118,7 +118,7 @@ export function useWorkerApplications() {
 
   return useQuery({
     queryKey: ['/api/workers', user?.id, 'applications'],
-    queryFn: async (): Promise<JobApplication[]> => {
+    queryFn: async (): Promise<EnrichedJobApplication[]> => {
       if (!user?.id) throw new Error('User not authenticated');
 
       const res = await fetch(`/api/workers/${user.id}/applications`, { credentials: 'include' });

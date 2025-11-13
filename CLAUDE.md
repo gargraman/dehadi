@@ -45,13 +45,39 @@ vitest run tests/integration  # Run integration tests only
 tsx db/seed-test.ts     # Seed test database (small dataset)
 tsx db/seed-dev.ts      # Seed dev database (larger dataset)
 
-# Docker Commands
+# Docker Commands (Development)
 npm run docker:dev      # Start development environment
+npm run docker:dev:build  # Start development with rebuild
+npm run docker:dev:tools   # Start development with tools (pgAdmin)
+
+# Docker Commands (Production)
 npm run docker:prod     # Start production environment
+npm run docker:prod:build  # Start production with rebuild
+
+# Docker Commands (Testing)
+npm run docker:test     # Run tests in Docker (abort on container exit)
+
+# Docker Build Commands
 npm run docker:build    # Build all Docker images
+npm run docker:build:dev   # Build development image only
+npm run docker:build:prod  # Build production image only
+
+# Docker Management
 npm run docker:down     # Stop all services
+npm run docker:down:volumes  # Stop services and remove volumes
 npm run docker:logs     # View logs from all services
-npm run docker:shell    # Shell access to development container
+npm run docker:logs:app # View app logs only
+npm run docker:logs:db  # View database logs only
+npm run docker:ps       # Show running containers
+npm run docker:restart  # Restart all services
+npm run docker:clean    # Full cleanup (remove containers, volumes, orphans)
+
+# Docker Database Operations
+npm run docker:db:seed:test  # Seed test data in Docker
+npm run docker:db:seed:dev   # Seed dev data in Docker
+npm run docker:db:push      # Push DB schema in Docker
+npm run docker:shell        # Shell access to development container
+npm run docker:db:shell     # Direct PostgreSQL shell access
 ```
 
 ## Architecture
@@ -204,6 +230,10 @@ The application follows comprehensive design guidelines in `design_guidelines.md
 - ✅ Core messaging system
 - ✅ Search and discovery features
 - ✅ Responsive mobile-first UI
+- ✅ Complete shadcn/ui component library implementation
+- ✅ Comprehensive testing infrastructure with unit, integration, and component tests
+- ✅ Docker containerization with multi-stage builds
+- ✅ Flutter mobile app implementation (parallel development)
 
 **In Development/Enhancement Areas:**
 - 🔄 Voice interface capabilities (planned)
