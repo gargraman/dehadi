@@ -1,6 +1,4 @@
-import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import SearchBar from '@/components/SearchBar';
 import JobCard from '@/components/JobCard';
@@ -9,6 +7,9 @@ import { Notifications, Add } from '@mui/icons-material';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth } from '@/lib/auth';
+import { useJobs } from '@/hooks/useJobs';
 import type { Job } from '@shared/schema';
 
 // Helper to get work type display name
@@ -30,29 +31,21 @@ const getWorkTypeName = (workType: string) => {
 
 export default function Home() {
   const [, navigate] = useLocation();
-  const [userRole] = useState('worker');
-  const [userSkills, setUserSkills] = useState<string[]>([]);
+  const { user } = useAuth();
+  const { data: jobs = [], isLoading, error, refetch } = useJobs();
 
-  useEffect(() => {
-    const data = localStorage.getItem('onboardingData');
-    if (data) {
-      const parsed = JSON.parse(data);
-      setUserSkills(parsed.skills || []);
-    }
-  }, []);
+  // Filter jobs based on user skills (for workers) or show all jobs (for employers/others)
+  const recommendedJobs = user?.role === 'worker' && user.skills
+    ? jobs.filter(job =>
+        user.skills?.some(skill => skill.toLowerCase() === job.workType.toLowerCase())
+      )
+    : [];
 
-  const { data: jobs = [], isLoading } = useQuery<Job[]>({
-    queryKey: ['/api/jobs'],
-  });
-
-  // Filter jobs based on user skills
-  const recommendedJobs = jobs.filter(job => 
-    userSkills.includes(job.workType)
-  );
-
-  const otherJobs = jobs.filter(job => 
-    !userSkills.includes(job.workType)
-  );
+  const otherJobs = user?.role === 'worker' && user.skills
+    ? jobs.filter(job =>
+        !user.skills?.some(skill => skill.toLowerCase() === job.workType.toLowerCase())
+      )
+    : jobs;
 
   // Calculate stats
   const totalJobs = jobs.length;
@@ -68,8 +61,12 @@ export default function Home() {
       <header className="sticky top-0 z-40 bg-card border-b border-card-border">
         <div className="flex items-center justify-between px-4 py-3">
           <div>
-            <h1 className="text-xl font-bold text-foreground">Dehadi</h1>
-            <p className="text-xs text-muted-foreground">Find work nearby</p>
+            <h1 className="text-xl font-bold text-foreground">
+              {user ? `Hello, ${user.fullName.split(' ')[0]}!` : 'Dehadi'}
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              {user?.role === 'worker' ? 'Find work nearby' : user?.role === 'employer' ? 'Manage your jobs' : 'Welcome to Dehadi'}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="h-10 w-10 relative" data-testid="button-notifications">
@@ -106,10 +103,21 @@ export default function Home() {
       <div className="p-4 space-y-4">
         {isLoading ? (
           <>
-            <Skeleton className="h-48 w-full" />
-            <Skeleton className="h-48 w-full" />
-            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-48 w-full rounded-lg" />
+            <Skeleton className="h-48 w-full rounded-lg" />
+            <Skeleton className="h-48 w-full rounded-lg" />
           </>
+        ) : error ? (
+          <div className="text-center py-12">
+            <Alert variant="destructive" className="max-w-md mx-auto">
+              <AlertDescription>
+                Failed to load jobs. Please check your connection and try again.
+              </AlertDescription>
+            </Alert>
+            <Button onClick={() => refetch()} className="mt-4">
+              Try Again
+            </Button>
+          </div>
         ) : (
           <>
             {/* Recommended Jobs Based on Skills */}
@@ -178,15 +186,17 @@ export default function Home() {
         )}
       </div>
 
-      {/* Floating Action Button for Posting Jobs */}
-      <Button
-        size="icon"
-        className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-lg z-30"
-        onClick={() => navigate('/post-job')}
-        data-testid="button-post-job-fab"
-      >
-        <Add sx={{ fontSize: 28 }} />
-      </Button>
+      {/* Floating Action Button for Posting Jobs - Only for Employers */}
+      {user?.role === 'employer' && (
+        <Button
+          size="icon"
+          className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-lg z-30"
+          onClick={() => navigate('/post-job')}
+          data-testid="button-post-job-fab"
+        >
+          <Add sx={{ fontSize: 28 }} />
+        </Button>
+      )}
     </div>
   );
 }

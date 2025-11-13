@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useAuth } from '@/lib/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,11 +14,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { 
-  Edit, 
-  Verified, 
-  Star, 
-  Work, 
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Edit,
+  Verified,
+  Star,
+  Work,
   LocationOn,
   Language,
   Brightness4,
@@ -25,20 +27,15 @@ import {
   CreditCard,
   MyLocation
 } from '@mui/icons-material';
-import { Hammer, Zap, Droplets, Wrench, Paintbrush, HandHelping, Car, Sparkles, ChefHat, Shield } from 'lucide-react';
+import { Hammer, Zap, Droplets, Wrench, Paintbrush, HandHelping, Car, Sparkles, ChefHat, Shield, Loader2 } from 'lucide-react';
 
-const mockUserProfile = {
-  name: 'Ramesh Kumar',
-  phone: '+91 98765 43210',
-  location: 'Andheri West, Mumbai',
-  isVerified: true,
+// Mock additional profile data that would come from other endpoints
+const mockStats = {
   rating: 4.8,
   reviewCount: 45,
   completedJobs: 127,
   experience: '8 years',
-  skills: ['Mason', 'Plastering', 'Brick Work', 'Block Work'],
   dailyRate: '900',
-  languages: ['Hindi', 'Marathi', 'English'],
 };
 
 const languages = [
@@ -75,74 +72,77 @@ const menuItems = [
   { icon: ExitToApp, label: 'Logout', action: 'logout', isDanger: true },
 ];
 
-interface OnboardingData {
-  language: string;
-  location: string;
-  skills?: string[];
-  aadhar: string;
-  completedAt: string;
-}
-
 export default function Profile() {
+  const { user, logout, isLoading } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
-  const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editField, setEditField] = useState<'language' | 'location' | 'skills' | 'aadhar' | null>(null);
+  const [editField, setEditField] = useState<'location' | 'skills' | null>(null);
   const [editValue, setEditValue] = useState('');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [isLocating, setIsLocating] = useState(false);
 
-  // Normalize legacy skill data to new ID format
-  const normalizeSkills = (skills: string[] | undefined): string[] => {
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+          <p className="text-muted-foreground">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if no user data
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="py-8 text-center">
+            <Alert variant="destructive">
+              <AlertDescription>
+                Unable to load profile data. Please try logging in again.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Normalize skills to use skill IDs
+  const normalizeSkills = (skills: string[] | null): string[] => {
     if (!skills || skills.length === 0) return [];
-    
+
     return skills
       .map(skill => {
         // If already an ID (lowercase), return as-is
-        if (skillCategories.find(s => s.id === skill)) {
-          return skill;
-        }
-        // Try to map legacy skill name to new ID (case-insensitive)
+        const foundSkill = skillCategories.find(s => s.id === skill.toLowerCase());
+        if (foundSkill) return foundSkill.id;
+
+        // Try to map skill name to ID (case-insensitive)
         const matchingSkill = skillCategories.find(
-          s => s.name.toLowerCase() === skill.toLowerCase() || 
-               s.id === skill.toLowerCase()
+          s => s.name.toLowerCase() === skill.toLowerCase()
         );
         return matchingSkill?.id;
       })
       .filter((skill): skill is string => skill !== undefined);
   };
 
-  useEffect(() => {
-    const data = localStorage.getItem('onboardingData');
-    if (data) {
-      const parsedData = JSON.parse(data);
-      
-      // Normalize skills if present
-      if (parsedData.skills) {
-        const normalizedSkills = normalizeSkills(parsedData.skills);
-        if (JSON.stringify(normalizedSkills) !== JSON.stringify(parsedData.skills)) {
-          // Update localStorage with normalized data
-          const updatedData = { ...parsedData, skills: normalizedSkills };
-          localStorage.setItem('onboardingData', JSON.stringify(updatedData));
-          setOnboardingData(updatedData);
-        } else {
-          setOnboardingData(parsedData);
-        }
-      } else {
-        setOnboardingData(parsedData);
-      }
-    }
-  }, []);
+  const userSkills = normalizeSkills(user.skills);
 
   const handleMenuAction = (action: string) => {
     if (action === 'darkmode') {
       setDarkMode(!darkMode);
       document.documentElement.classList.toggle('dark');
+    } else if (action === 'logout') {
+      logout();
+    } else {
+      console.log('Menu action:', action);
     }
-    console.log('Menu action:', action);
   };
 
-  const handleEditClick = (field: 'language' | 'location' | 'skills' | 'aadhar', currentValue: string | string[]) => {
+  const handleEditClick = (field: 'location' | 'skills', currentValue: string | string[]) => {
     setEditField(field);
     if (field === 'skills') {
       setSelectedSkills(currentValue as string[]);
@@ -153,18 +153,16 @@ export default function Profile() {
   };
 
   const handleSaveEdit = () => {
-    if (onboardingData && editField) {
-      const updatedData = {
-        ...onboardingData,
-        [editField]: editField === 'skills' ? selectedSkills : editValue,
-      };
-      localStorage.setItem('onboardingData', JSON.stringify(updatedData));
-      setOnboardingData(updatedData);
-      setEditDialogOpen(false);
-      setEditField(null);
-      setEditValue('');
-      setSelectedSkills([]);
-    }
+    // Note: In a real app, this would make an API call to update the user profile
+    // For now, we'll just close the dialog and show a message that the feature is coming soon
+    console.log('Profile update would be sent to API:', {
+      field: editField,
+      value: editField === 'skills' ? selectedSkills : editValue
+    });
+    setEditDialogOpen(false);
+    setEditField(null);
+    setEditValue('');
+    setSelectedSkills([]);
   };
 
   const handleLocateMe = () => {
@@ -191,6 +189,15 @@ export default function Profile() {
     return lang ? `${lang.native} (${lang.name})` : code;
   };
 
+  const getUserInitials = (fullName: string) => {
+    return fullName
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
@@ -207,196 +214,162 @@ export default function Profile() {
                 <Avatar className="h-20 w-20">
                   <AvatarImage src="" />
                   <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
-                    RK
+                    {getUserInitials(user.fullName)}
                   </AvatarFallback>
                 </Avatar>
-                {mockUserProfile.isVerified && (
-                  <div className="absolute -bottom-1 -right-1 bg-chart-3 rounded-full p-1">
-                    <Verified sx={{ fontSize: 20, color: 'white' }} />
-                  </div>
-                )}
+                {/* For now, showing verified for all users - in real app this would be based on verification status */}
+                <div className="absolute -bottom-1 -right-1 bg-chart-3 rounded-full p-1">
+                  <Verified sx={{ fontSize: 20, color: 'white' }} />
+                </div>
               </div>
 
               <div className="flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h2 className="text-xl font-bold text-foreground">{mockUserProfile.name}</h2>
-                    <p className="text-sm text-muted-foreground mt-0.5">{mockUserProfile.phone}</p>
+                    <h2 className="text-xl font-bold text-foreground">{user.fullName}</h2>
+                    <p className="text-sm text-muted-foreground mt-0.5">{user.phone}</p>
+                    <Badge variant="outline" className="mt-1 capitalize">
+                      {user.role}
+                    </Badge>
                   </div>
                   <Button variant="outline" size="sm" data-testid="button-edit-profile">
                     <Edit sx={{ fontSize: 18 }} />
                   </Button>
                 </div>
 
-                <div className="flex items-center gap-1 mt-2">
-                  <Star sx={{ fontSize: 18, color: 'hsl(var(--chart-5))' }} />
-                  <span className="font-semibold text-foreground">{mockUserProfile.rating}</span>
-                  <span className="text-sm text-muted-foreground">({mockUserProfile.reviewCount} reviews)</span>
+                {/* Only show worker stats for workers */}
+                {user.role === 'worker' && (
+                  <>
+                    <div className="flex items-center gap-1 mt-2">
+                      <Star sx={{ fontSize: 18, color: 'hsl(var(--chart-5))' }} />
+                      <span className="font-semibold text-foreground">{mockStats.rating}</span>
+                      <span className="text-sm text-muted-foreground">({mockStats.reviewCount} reviews)</span>
+                    </div>
+                  </>
+                )}
+
+                {user.location && (
+                  <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
+                    <LocationOn sx={{ fontSize: 16 }} />
+                    <span>{user.location}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Skills - only show for workers */}
+            {user.role === 'worker' && (
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium text-muted-foreground">Skills</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEditClick('skills', userSkills)}
+                    data-testid="button-edit-skills"
+                  >
+                    <Edit sx={{ fontSize: 16 }} />
+                  </Button>
                 </div>
-
-                <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
-                  <LocationOn sx={{ fontSize: 16 }} />
-                  <span>{mockUserProfile.location}</span>
+                <div className="flex flex-wrap gap-2">
+                  {userSkills.length > 0 ? (
+                    userSkills.map((skillId) => {
+                      const skill = skillCategories.find(s => s.id === skillId);
+                      if (!skill) return null;
+                      const Icon = skill.icon;
+                      return (
+                        <Badge key={skillId} variant="secondary" className="gap-1">
+                          <Icon className={`w-3 h-3 ${skill.color}`} />
+                          <span>{skill.name}</span>
+                        </Badge>
+                      );
+                    }).filter(Boolean)
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No skills added yet</p>
+                  )}
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Skills */}
-            <div className="mt-4">
-              <p className="text-sm font-medium text-muted-foreground mb-2">Skills</p>
-              <div className="flex flex-wrap gap-2">
-                {mockUserProfile.skills.map((skill, index) => (
-                  <Badge key={index} variant="secondary">
-                    {skill}
-                  </Badge>
-                ))}
+            {/* Stats - only show for workers */}
+            {user.role === 'worker' && (
+              <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-foreground">{mockStats.completedJobs}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Jobs Done</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-foreground">{mockStats.experience}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Experience</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-foreground">₹{mockStats.dailyRate}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Daily Rate</p>
+                </div>
               </div>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-foreground">{mockUserProfile.completedJobs}</p>
-                <p className="text-xs text-muted-foreground mt-1">Jobs Done</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-foreground">{mockUserProfile.experience}</p>
-                <p className="text-xs text-muted-foreground mt-1">Experience</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-foreground">₹{mockUserProfile.dailyRate}</p>
-                <p className="text-xs text-muted-foreground mt-1">Daily Rate</p>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Onboarding Information */}
-      {onboardingData ? (
-        <div className="px-4 pb-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Account Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {/* Language */}
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-3">
-                  <Language sx={{ fontSize: 20 }} className="text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Language</p>
-                    <p className="text-sm font-medium text-foreground">
-                      {getLanguageName(onboardingData.language)}
-                    </p>
-                  </div>
+      {/* Account Information */}
+      <div className="px-4 pb-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Account Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {/* Language */}
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-3">
+                <Language sx={{ fontSize: 20 }} className="text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Language</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {getLanguageName(user.language)}
+                  </p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleEditClick('language', onboardingData.language)}
-                  data-testid="button-edit-language"
-                >
-                  <Edit sx={{ fontSize: 18 }} />
-                </Button>
               </div>
+              {/* Language editing disabled for now - would need API endpoint */}
+              <div className="w-10" />
+            </div>
 
-              {/* Location */}
+            {/* Location */}
+            {user.location && (
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-3">
                   <LocationOn sx={{ fontSize: 20 }} className="text-muted-foreground" />
                   <div>
                     <p className="text-xs text-muted-foreground">Location</p>
-                    <p className="text-sm font-medium text-foreground">{onboardingData.location}</p>
+                    <p className="text-sm font-medium text-foreground">{user.location}</p>
                   </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleEditClick('location', onboardingData.location)}
+                  onClick={() => handleEditClick('location', user.location || '')}
                   data-testid="button-edit-location"
                 >
                   <Edit sx={{ fontSize: 18 }} />
                 </Button>
               </div>
+            )}
 
-              {/* Skills */}
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Work sx={{ fontSize: 20 }} className="text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground">Skills</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2 ml-8">
-                    {(() => {
-                      const skills = (onboardingData.skills || [])
-                        .map((skillId) => {
-                          const skill = skillCategories.find(s => s.id === skillId);
-                          if (!skill) return null;
-                          const Icon = skill.icon;
-                          return (
-                            <Badge key={skillId} variant="secondary" className="gap-1">
-                              <Icon className={`w-3 h-3 ${skill.color}`} />
-                              <span>{skill.name}</span>
-                            </Badge>
-                          );
-                        })
-                        .filter(badge => badge !== null);
-                      
-                      return skills.length > 0 ? skills : (
-                        <p className="text-sm text-muted-foreground">No skills added yet</p>
-                      );
-                    })()}
-                  </div>
+            {/* Username */}
+            <div className="flex items-center p-3 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-3">
+                <CreditCard sx={{ fontSize: 20 }} className="text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Username</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {user.username}
+                  </p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleEditClick('skills', onboardingData.skills || [])}
-                  data-testid="button-edit-skills"
-                >
-                  <Edit sx={{ fontSize: 18 }} />
-                </Button>
               </div>
-
-              {/* Aadhar */}
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-3">
-                  <CreditCard sx={{ fontSize: 20 }} className="text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Aadhar Number</p>
-                    <p className="text-sm font-medium text-foreground font-mono">
-                      {maskAadhar(onboardingData.aadhar)}
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleEditClick('aadhar', onboardingData.aadhar)}
-                  data-testid="button-edit-aadhar"
-                >
-                  <Edit sx={{ fontSize: 18 }} />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      ) : (
-        <div className="px-4 pb-4">
-          <Card>
-            <CardContent className="py-8 text-center">
-              <p className="text-muted-foreground mb-3">Complete onboarding to set up your profile</p>
-              <Button
-                onClick={() => window.location.href = '/onboarding'}
-                data-testid="button-start-onboarding"
-              >
-                Complete Setup
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Menu Items */}
       <div className="px-4 pb-4 space-y-2">
@@ -432,38 +405,14 @@ export default function Profile() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Edit {editField === 'language' ? 'Language' : editField === 'location' ? 'Location' : editField === 'skills' ? 'Skills' : 'Aadhar Number'}
+              Edit {editField === 'location' ? 'Location' : editField === 'skills' ? 'Skills' : 'Profile'}
             </DialogTitle>
             <DialogDescription>
-              Update your {editField === 'language' ? 'preferred language' : editField === 'location' ? 'current location' : editField === 'skills' ? 'work skills' : 'Aadhar information'}
+              Update your {editField === 'location' ? 'current location' : editField === 'skills' ? 'work skills' : 'profile information'}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            {editField === 'language' && (
-              <div className="grid grid-cols-2 gap-2 max-h-80 overflow-y-auto">
-                {languages.map((lang) => (
-                  <button
-                    key={lang.code}
-                    onClick={() => setEditValue(lang.code)}
-                    className={`p-3 rounded-lg border-2 transition-all text-left ${
-                      editValue === lang.code
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border bg-card'
-                    }`}
-                    data-testid={`edit-language-${lang.code}`}
-                  >
-                    <div className="text-base mb-0.5">{lang.native}</div>
-                    <div className={`text-xs ${
-                      editValue === lang.code ? 'text-primary font-medium' : 'text-muted-foreground'
-                    }`}>
-                      {lang.name}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-
             {editField === 'location' && (
               <div className="space-y-3">
                 <div>
@@ -501,8 +450,8 @@ export default function Profile() {
                       <button
                         key={skill.id}
                         onClick={() => {
-                          setSelectedSkills(prev => 
-                            prev.includes(skill.id) 
+                          setSelectedSkills(prev =>
+                            prev.includes(skill.id)
                               ? prev.filter(id => id !== skill.id)
                               : [...prev, skill.id]
                           );
@@ -540,24 +489,12 @@ export default function Profile() {
               </div>
             )}
 
-            {editField === 'aadhar' && (
-              <div>
-                <Label htmlFor="edit-aadhar">Aadhar Number</Label>
-                <Input
-                  id="edit-aadhar"
-                  type="text"
-                  placeholder="XXXX XXXX XXXX"
-                  value={formatAadhar(editValue)}
-                  onChange={(e) => setEditValue(e.target.value.replace(/\s/g, ''))}
-                  className="mt-2 tracking-wider font-mono"
-                  data-testid="input-edit-aadhar"
-                  maxLength={14}
-                />
-                <p className="text-xs text-muted-foreground mt-2">
-                  Your Aadhar information is secure and encrypted
-                </p>
-              </div>
-            )}
+            {/* Show note about API integration */}
+            <Alert>
+              <AlertDescription>
+                Profile updates will be available once the API endpoints are implemented.
+              </AlertDescription>
+            </Alert>
           </div>
 
           <DialogFooter>
@@ -571,9 +508,9 @@ export default function Profile() {
             <Button
               onClick={handleSaveEdit}
               disabled={
-                editField === 'skills' 
+                editField === 'skills'
                   ? selectedSkills.length === 0
-                  : !editValue || (editField === 'aadhar' && editValue.length !== 12)
+                  : !editValue.trim()
               }
               data-testid="button-save-edit"
             >

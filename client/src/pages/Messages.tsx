@@ -1,38 +1,66 @@
+import { useLocation } from 'wouter';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-
-const mockConversations = [
-  {
-    id: '1',
-    name: 'ABC Construction Pvt Ltd',
-    avatar: '',
-    lastMessage: 'Can you start tomorrow at 8 AM?',
-    timestamp: new Date(),
-    unreadCount: 2,
-    isOnline: true,
-  },
-  {
-    id: '2',
-    name: 'Metro Builders',
-    avatar: '',
-    lastMessage: 'Thanks for your interest. We will get back to you.',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60),
-    unreadCount: 0,
-    isOnline: false,
-  },
-  {
-    id: '3',
-    name: 'City Projects Ltd',
-    avatar: '',
-    lastMessage: 'Your application has been received',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    unreadCount: 1,
-    isOnline: false,
-  },
-];
+import { useConversations } from '@/hooks/useMessages';
 
 export default function Messages() {
+  const [, setLocation] = useLocation();
+  const { data: conversations = [], isLoading, error, refetch } = useConversations();
+
+  const handleOpenConversation = (conversation: typeof conversations[0]) => {
+    // Navigate to conversation with user details as query params
+    const params = new URLSearchParams({
+      name: conversation.name,
+    });
+    setLocation(`/conversation/${conversation.userId}?${params.toString()}`);
+  };
+
+  const getUserInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <header className="sticky top-0 z-40 bg-card border-b border-card-border px-4 py-3">
+          <h1 className="text-xl font-bold text-foreground">Messages</h1>
+        </header>
+        <div className="flex items-center justify-center py-16">
+          <div className="text-center space-y-4">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+            <p className="text-muted-foreground">Loading messages...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <header className="sticky top-0 z-40 bg-card border-b border-card-border px-4 py-3">
+          <h1 className="text-xl font-bold text-foreground">Messages</h1>
+        </header>
+        <div className="flex items-center justify-center py-16 px-4">
+          <div className="text-center space-y-4 max-w-md">
+            <Alert variant="destructive">
+              <AlertDescription>
+                Failed to load messages. Please check your connection and try again.
+              </AlertDescription>
+            </Alert>
+            <Button onClick={() => refetch()}>
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
@@ -42,14 +70,14 @@ export default function Messages() {
 
       {/* Conversations List */}
       <div className="divide-y divide-border">
-        {mockConversations.map((conversation) => {
-          const initials = conversation.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-          
+        {conversations.map((conversation) => {
+          const initials = getUserInitials(conversation.name);
+
           return (
             <button
               key={conversation.id}
               className="w-full px-4 py-3 flex items-start gap-3 hover-elevate active-elevate-2 transition-colors text-left"
-              onClick={() => console.log('Open conversation:', conversation.id)}
+              onClick={() => handleOpenConversation(conversation)}
               data-testid={`conversation-${conversation.id}`}
             >
               <div className="relative">
@@ -89,7 +117,7 @@ export default function Messages() {
         })}
       </div>
 
-      {mockConversations.length === 0 && (
+      {conversations.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 px-4">
           <p className="text-muted-foreground text-center">No messages yet</p>
           <p className="text-sm text-muted-foreground text-center mt-2">

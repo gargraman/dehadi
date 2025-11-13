@@ -44,11 +44,62 @@ export default function Onboarding() {
 
   const handleLocateMe = () => {
     setIsLocating(true);
-    // Simulate getting location
-    setTimeout(() => {
-      setCurrentLocation('Andheri West, Mumbai, Maharashtra');
+
+    if (!navigator.geolocation) {
+      setCurrentLocation('Location not supported by browser');
       setIsLocating(false);
-    }, 1500);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+
+          // Use reverse geocoding to get readable address
+          const response = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            const address = `${data.locality || ''}, ${data.city || ''}, ${data.principalSubdivision || ''}`.replace(/^,\s*|,\s*$/g, '');
+            setCurrentLocation(address || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+          } else {
+            setCurrentLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+          }
+        } catch (error) {
+          console.error('Geocoding error:', error);
+          setCurrentLocation('Location detected but address lookup failed');
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        let errorMessage = 'Unable to get location';
+
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location access denied. Please enable location permissions.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information unavailable.';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out.';
+            break;
+        }
+
+        setCurrentLocation(errorMessage);
+        setIsLocating(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000 // 5 minutes
+      }
+    );
   };
 
   const handleLanguageNext = () => {
