@@ -1,16 +1,9 @@
 import { useLocation } from 'wouter';
-import { formatDistanceToNow } from 'date-fns';
-import SearchBar from '@/components/SearchBar';
-import JobCard from '@/components/JobCard';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { Notifications, Add } from '@mui/icons-material';
+import { Mic, Work, LocationOn, Search, Add } from '@mui/icons-material';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/lib/auth';
 import { useJobs } from '@/hooks/useJobs';
-import type { Job } from '@shared/schema';
+import JobCard from '@/components/JobCard';
 
 // Helper to get work type display name
 const getWorkTypeName = (workType: string) => {
@@ -32,170 +25,129 @@ const getWorkTypeName = (workType: string) => {
 export default function Home() {
   const [, navigate] = useLocation();
   const { user } = useAuth();
-  const { data: jobs = [], isLoading, error, refetch } = useJobs();
+  const { data: jobs = [], isLoading } = useJobs();
 
-  // Filter jobs based on user skills (for workers) or show all jobs (for employers/others)
-  const recommendedJobs = user?.role === 'worker' && user.skills
+  // Show only 3 most relevant jobs for simplicity
+  const relevantJobs = user?.role === 'worker' && user.skills
     ? jobs.filter(job =>
         user.skills?.some(skill => skill.toLowerCase() === job.workType.toLowerCase())
-      )
-    : [];
-
-  const otherJobs = user?.role === 'worker' && user.skills
-    ? jobs.filter(job =>
-        !user.skills?.some(skill => skill.toLowerCase() === job.workType.toLowerCase())
-      )
-    : jobs;
-
-  // Calculate stats
-  const totalJobs = jobs.length;
-  const todayJobs = jobs.filter(job => {
-    const jobDate = new Date(job.createdAt);
-    const today = new Date();
-    return jobDate.toDateString() === today.toDateString();
-  }).length;
+      ).slice(0, 3)
+    : jobs.slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-card border-b border-card-border">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div>
-            <h1 className="text-xl font-bold text-foreground">
-              {user ? `Hello, ${user.fullName.split(' ')[0]}!` : 'Dehadi'}
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              {user?.role === 'worker' ? 'Find work nearby' : user?.role === 'employer' ? 'Manage your jobs' : 'Welcome to Dehadi'}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="h-10 w-10 relative" data-testid="button-notifications">
-              <Notifications sx={{ fontSize: 24 }} />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-destructive text-white text-xs">
-                3
-              </Badge>
-            </Button>
-            <LanguageSwitcher />
-          </div>
-        </div>
-      </header>
-
-      {/* Search Section */}
-      <div className="p-4 bg-card border-b border-card-border">
-        <SearchBar />
+    <div className="min-h-screen bg-white pb-32 px-4">
+      {/* Giant Welcome Section */}
+      <div className="text-center py-12">
+        <div className="text-8xl mb-6">👋</div>
+        <h1 className="text-4xl font-bold text-gray-800 mb-4">
+          नमस्ते{user ? `, ${user.fullName.split(' ')[0]}` : ''}!
+        </h1>
+        <p className="text-2xl text-gray-600 mb-2">
+          {user?.role === 'worker' ? '💼 काम खोजें' : '👥 मजदूर खोजें'}
+        </p>
+        <p className="text-lg text-gray-500">
+          {user?.role === 'worker' ? 'Find Work Today' : 'Find Workers Today'}
+        </p>
       </div>
 
-      {/* Quick Stats */}
-      <div className="px-4 py-3 bg-primary/5 border-b border-primary/10">
-        <div className="flex items-center justify-between text-sm">
-          <div>
-            <span className="font-semibold text-foreground">{totalJobs}</span>
-            <span className="text-muted-foreground ml-1">jobs nearby</span>
+      {/* Giant Action Buttons */}
+      <div className="space-y-6 max-w-md mx-auto">
+        {/* Voice Search - HUGE and obvious */}
+        <Button
+          size="lg"
+          className="w-full h-24 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-2xl rounded-3xl"
+          onClick={() => {
+            // TODO: Implement voice search
+            console.log('Voice search activated');
+            navigate('/search');
+          }}
+        >
+          <div className="flex flex-col items-center gap-2">
+            <Mic sx={{ fontSize: 48 }} />
+            <div className="text-xl font-bold">🎤 बोलकर खोजें</div>
+            <div className="text-sm opacity-90">Speak to Find Work</div>
           </div>
-          <div>
-            <span className="font-semibold text-chart-3">{todayJobs}</span>
-            <span className="text-muted-foreground ml-1">new today</span>
+        </Button>
+
+        {/* Search by typing */}
+        <Button
+          size="lg"
+          variant="outline"
+          className="w-full h-24 border-4 border-blue-300 hover:bg-blue-50 rounded-3xl"
+          onClick={() => navigate('/search')}
+        >
+          <div className="flex flex-col items-center gap-2">
+            <Search sx={{ fontSize: 48, color: '#3b82f6' }} />
+            <div className="text-xl font-bold text-blue-600">🔍 टाइप करके खोजें</div>
+            <div className="text-sm text-blue-500">Search by Typing</div>
           </div>
-        </div>
-      </div>
+        </Button>
 
-      {/* Jobs List */}
-      <div className="p-4 space-y-4">
-        {isLoading ? (
-          <>
-            <Skeleton className="h-48 w-full rounded-lg" />
-            <Skeleton className="h-48 w-full rounded-lg" />
-            <Skeleton className="h-48 w-full rounded-lg" />
-          </>
-        ) : error ? (
-          <div className="text-center py-12">
-            <Alert variant="destructive" className="max-w-md mx-auto">
-              <AlertDescription>
-                Failed to load jobs. Please check your connection and try again.
-              </AlertDescription>
-            </Alert>
-            <Button onClick={() => refetch()} className="mt-4">
-              Try Again
-            </Button>
-          </div>
-        ) : (
-          <>
-            {/* Recommended Jobs Based on Skills */}
-            {recommendedJobs.length > 0 && (
-              <>
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-lg font-semibold text-foreground">Recommended For You</h2>
-                  <Badge variant="secondary" className="text-xs">Based on your skills</Badge>
-                </div>
-                {recommendedJobs.map((job) => (
-                  <JobCard
-                    key={job.id}
-                    id={job.id}
-                    title={getWorkTypeName(job.workType)}
-                    employer={`Employer #${job.employerId.slice(0, 8)}`}
-                    location={job.location}
-                    distance="Nearby"
-                    wageType={job.wageType as 'daily' | 'hourly' | 'fixed'}
-                    wage={job.wage.toString()}
-                    skills={job.skills || []}
-                    postedTime={formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
-                    headcount={job.headcount || undefined}
-                    status={job.status}
-                  />
-                ))}
-              </>
-            )}
-
-            {/* Other Jobs */}
-            {otherJobs.length > 0 && (
-              <>
-                <div className="flex items-center justify-between mb-2 mt-6">
-                  <h2 className="text-lg font-semibold text-foreground">
-                    {recommendedJobs.length > 0 ? 'Other Jobs' : 'All Jobs'}
-                  </h2>
-                  <Button variant="ghost" size="sm" data-testid="button-see-all">
-                    See All
-                  </Button>
-                </div>
-                {otherJobs.map((job) => (
-                  <JobCard
-                    key={job.id}
-                    id={job.id}
-                    title={getWorkTypeName(job.workType)}
-                    employer={`Employer #${job.employerId.slice(0, 8)}`}
-                    location={job.location}
-                    distance="Nearby"
-                    wageType={job.wageType as 'daily' | 'hourly' | 'fixed'}
-                    wage={job.wage.toString()}
-                    skills={job.skills || []}
-                    postedTime={formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
-                    headcount={job.headcount || undefined}
-                    status={job.status}
-                  />
-                ))}
-              </>
-            )}
-
-            {jobs.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No jobs available at the moment</p>
-                <p className="text-sm text-muted-foreground mt-2">Check back later for new opportunities</p>
-              </div>
-            )}
-          </>
+        {/* Post Job (only for employers) */}
+        {user?.role === 'employer' && (
+          <Button
+            size="lg"
+            className="w-full h-24 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-2xl rounded-3xl"
+            onClick={() => navigate('/post-job')}
+          >
+            <div className="flex flex-col items-center gap-2">
+              <Add sx={{ fontSize: 48 }} />
+              <div className="text-xl font-bold">📝 काम का इश्तिहार दें</div>
+              <div className="text-sm opacity-90">Post Work</div>
+            </div>
+          </Button>
         )}
       </div>
 
-      {/* Floating Action Button for Posting Jobs - Only for Employers */}
-      {user?.role === 'employer' && (
-        <Button
-          size="icon"
-          className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-lg z-30"
-          onClick={() => navigate('/post-job')}
-          data-testid="button-post-job-fab"
-        >
-          <Add sx={{ fontSize: 28 }} />
-        </Button>
+      {/* Simple Job Count Display */}
+      {jobs.length > 0 && (
+        <div className="text-center mt-12 bg-green-50 p-6 rounded-3xl mx-4">
+          <div className="text-6xl mb-3">💼</div>
+          <p className="text-3xl font-bold text-green-800 mb-2">{jobs.length}</p>
+          <p className="text-xl text-green-700">काम उपलब्ध हैं</p>
+          <p className="text-lg text-green-600">Jobs Available Today</p>
+        </div>
+      )}
+
+      {/* Show 3 Jobs Maximum */}
+      {relevantJobs.length > 0 && (
+        <div className="mt-8">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">🔥 आज का काम</h2>
+            <p className="text-lg text-gray-600">Today's Work</p>
+          </div>
+
+          <div className="space-y-6">
+            {relevantJobs.map((job) => (
+              <JobCard
+                key={job.id}
+                id={job.id}
+                title={getWorkTypeName(job.workType)}
+                employer="काम देने वाला"
+                location={job.location}
+                distance="पास में"
+                wageType={job.wageType as 'daily' | 'hourly' | 'fixed'}
+                wage={job.wage.toString()}
+                skills={job.skills || []}
+                postedTime="आज"
+                headcount={job.headcount || undefined}
+                status={job.status}
+              />
+            ))}
+          </div>
+
+          {/* See More Button */}
+          <div className="text-center mt-8">
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-4 border-blue-300 text-blue-600 hover:bg-blue-50 px-8 py-6 text-xl rounded-2xl"
+              onClick={() => navigate('/search')}
+            >
+              और भी देखें →
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
