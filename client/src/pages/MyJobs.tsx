@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowBack, Work, Add, Group, Payment, CheckCircle, PlayArrow, Cancel } from '@mui/icons-material';
+import { ArrowLeft, Briefcase, Plus, Users, CreditCard, CheckCircle, Play, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,18 +30,18 @@ export default function MyJobs() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'open':
-        return <Work sx={{ fontSize: 20 }} className="text-blue-600" />;
+        return <Briefcase size={20} className="text-blue-600" />;
       case 'in_progress':
-        return <PlayArrow sx={{ fontSize: 20 }} className="text-orange-600" />;
+        return <Play size={20} className="text-orange-600" />;
       case 'awaiting_payment':
-        return <Payment sx={{ fontSize: 20 }} className="text-purple-600" />;
+        return <CreditCard size={20} className="text-purple-600" />;
       case 'completed':
       case 'paid':
-        return <CheckCircle sx={{ fontSize: 20 }} className="text-green-600" />;
+        return <CheckCircle size={20} className="text-green-600" />;
       case 'cancelled':
-        return <Cancel sx={{ fontSize: 20 }} className="text-red-600" />;
+        return <X size={20} className="text-red-600" />;
       default:
-        return <Work sx={{ fontSize: 20 }} />;
+        return <Briefcase size={20} />;
     }
   };
 
@@ -126,7 +126,7 @@ export default function MyJobs() {
             onClick={() => navigate(-1)}
             className="h-10 w-10"
           >
-            <ArrowBack />
+            <ArrowLeft />
           </Button>
           <div className="flex-1">
             <h1 className="text-xl font-bold text-foreground">My Jobs</h1>
@@ -138,7 +138,7 @@ export default function MyJobs() {
             onClick={() => navigate('/post-job')}
             className="shrink-0"
           >
-            <Add sx={{ fontSize: 18 }} className="mr-1" />
+            <Plus size={18} className="mr-1" />
             Post Job
           </Button>
         </div>
@@ -190,7 +190,7 @@ export default function MyJobs() {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center mb-2">
-                <Work sx={{ fontSize: 20 }} className="text-gray-600" />
+                <Briefcase size={20} className="text-gray-600" />
               </div>
               <div className="text-2xl font-bold">{myJobs.length}</div>
               <div className="text-xs text-muted-foreground">Total Jobs</div>
@@ -249,13 +249,13 @@ export default function MyJobs() {
             ) : myJobs.length === 0 ? (
               <Card>
                 <CardContent className="p-6 text-center">
-                  <Work sx={{ fontSize: 48 }} className="text-muted-foreground mx-auto mb-4" />
+                  <Briefcase size={48} className="text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Jobs Posted Yet</h3>
                   <p className="text-muted-foreground mb-4">
                     Start by posting your first job to find skilled workers.
                   </p>
                   <Button onClick={() => navigate('/post-job')}>
-                    <Add sx={{ fontSize: 18 }} className="mr-1" />
+                    <Plus size={18} className="mr-1" />
                     Post Your First Job
                   </Button>
                 </CardContent>
@@ -288,7 +288,7 @@ export default function MyJobs() {
                           navigate(`/jobs/${job.id}/applications`);
                         }}
                       >
-                        <Group sx={{ fontSize: 16 }} className="mr-1" />
+                        <Users size={16} className="mr-1" />
                         Applications
                       </Button>
 
@@ -302,7 +302,7 @@ export default function MyJobs() {
                           }}
                           disabled={completeJob.isPending}
                         >
-                          <CheckCircle sx={{ fontSize: 16 }} className="mr-1" />
+                          <CheckCircle size={16} className="mr-1" />
                           Complete
                         </Button>
                       )}
@@ -316,7 +316,7 @@ export default function MyJobs() {
                             navigate(`/payment?jobId=${job.id}`);
                           }}
                         >
-                          <Payment sx={{ fontSize: 16 }} className="mr-1" />
+                          <CreditCard size={16} className="mr-1" />
                           Pay Now
                         </Button>
                       )}
@@ -332,7 +332,7 @@ export default function MyJobs() {
                           }}
                           disabled={updateJobStatus.isPending}
                         >
-                          <Cancel sx={{ fontSize: 16 }} className="mr-1" />
+                          <X size={16} className="mr-1" />
                           Cancel
                         </Button>
                       )}
@@ -348,7 +348,7 @@ export default function MyJobs() {
             {openJobs.length === 0 ? (
               <Card>
                 <CardContent className="p-6 text-center">
-                  <Work sx={{ fontSize: 48 }} className="text-muted-foreground mx-auto mb-4" />
+                  <Briefcase size={48} className="text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Open Jobs</h3>
                   <p className="text-muted-foreground mb-4">
                     You don't have any open job postings currently.
@@ -384,7 +384,7 @@ export default function MyJobs() {
             {[...inProgressJobs, ...awaitingPaymentJobs].length === 0 ? (
               <Card>
                 <CardContent className="p-6 text-center">
-                  <PlayArrow sx={{ fontSize: 48 }} className="text-muted-foreground mx-auto mb-4" />
+                  <Play size={48} className="text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Active Jobs</h3>
                   <p className="text-muted-foreground">
                     You don't have any jobs in progress or awaiting payment.
@@ -417,7 +417,7 @@ export default function MyJobs() {
             {completedJobs.length === 0 ? (
               <Card>
                 <CardContent className="p-6 text-center">
-                  <CheckCircle sx={{ fontSize: 48 }} className="text-muted-foreground mx-auto mb-4" />
+                  <CheckCircle size={48} className="text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Completed Jobs</h3>
                   <p className="text-muted-foreground">
                     You haven't completed any jobs yet.
@@ -450,7 +450,7 @@ export default function MyJobs() {
             {cancelledJobs.length === 0 ? (
               <Card>
                 <CardContent className="p-6 text-center">
-                  <Cancel sx={{ fontSize: 48 }} className="text-muted-foreground mx-auto mb-4" />
+                  <X size={48} className="text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Cancelled Jobs</h3>
                   <p className="text-muted-foreground">
                     You haven't cancelled any jobs.

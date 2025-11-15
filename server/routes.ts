@@ -104,11 +104,11 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
   // Create job - employers only
   app.post("/api/jobs", ensureAuthenticated, ensureRole('employer'), async (req: AuthenticatedRequest, res, next) => {
     try {
-      const parsed = insertJobSchema.parse(req.body);
-      const job = await storage.createJob({
-        ...parsed,
-        employerId: req.user!.id // Use authenticated user ID
+      const parsed = insertJobSchema.parse({
+        ...req.body,
+        employerId: req.user!.id // Add employerId before validation
       });
+      const job = await storage.createJob(parsed);
 
       logger.info('Job created', { jobId: job.id, employerId: req.user!.id });
       res.status(201).json(job);
@@ -175,11 +175,11 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
   // Create application - workers only
   app.post("/api/applications", ensureAuthenticated, ensureRole('worker'), async (req: AuthenticatedRequest, res, next) => {
     try {
-      const parsed = insertJobApplicationSchema.parse(req.body);
-      const application = await storage.createApplication({
-        ...parsed,
-        workerId: req.user!.id // Use authenticated user ID
+      const parsed = insertJobApplicationSchema.parse({
+        ...req.body,
+        workerId: req.user!.id // Add workerId before validation
       });
+      const application = await storage.createApplication(parsed);
 
       logger.info('Application created', { applicationId: application.id, jobId: parsed.jobId });
       res.status(201).json(application);
@@ -521,11 +521,11 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
   // Send message - authenticated users only
   app.post("/api/messages", ensureAuthenticated, async (req: AuthenticatedRequest, res, next) => {
     try {
-      const parsed = insertMessageSchema.parse(req.body);
-      const message = await storage.createMessage({
-        ...parsed,
-        senderId: req.user!.id // Use authenticated user ID
+      const parsed = insertMessageSchema.parse({
+        ...req.body,
+        senderId: req.user!.id // Add senderId before validation
       });
+      const message = await storage.createMessage(parsed);
 
       logger.info('Message sent', { messageId: message.id, receiverId: parsed.receiverId });
       res.status(201).json(message);

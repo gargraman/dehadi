@@ -82,11 +82,7 @@ app.use(session({
 
     // Start server
     const port = parseInt(process.env.PORT || '5000', 10);
-    server.listen({
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    }, () => {
+    server.listen(port, "localhost", () => {
       logger.info(`Server started successfully`, {
         port,
         environment: process.env.NODE_ENV || 'development'

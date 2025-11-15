@@ -22,7 +22,7 @@ services:
       # Performance tuning for development
       POSTGRES_INITDB_ARGS: "-E UTF8 --locale=en_US.UTF-8"
     ports:
-      - "${PGPORT:-5432}:5432"
+      - "${PGPORT:-5435}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       # Initialize database with extensions if needed

@@ -1,13 +1,13 @@
 import { useLocation } from 'wouter';
 import {
-  Work,
-  AccessTime,
+  Briefcase,
+  Clock,
   CheckCircle,
-  Cancel,
-  HourglassEmpty,
-  Person,
-  LocationOn
-} from '@mui/icons-material';
+  X,
+  Timer,
+  User,
+  MapPin
+} from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
