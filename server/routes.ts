@@ -11,6 +11,14 @@ import {
 } from "@shared/schema";
 import { ensureAuthenticated, ensureRole, AuthenticatedRequest } from "./middleware/auth.middleware";
 import { logger } from "./lib/logger";
+import {
+  ValidationError,
+  NotFoundError,
+  ForbiddenError,
+  BusinessRuleError,
+  ConflictError,
+  ExternalServiceError
+} from "./errors/AppError";
 
 // Validation schemas for PATCH endpoints
 const updateStatusSchema = z.object({
@@ -96,11 +104,11 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
   // Create job - employers only
   app.post("/api/jobs", ensureAuthenticated, ensureRole('employer'), async (req: AuthenticatedRequest, res, next) => {
     try {
-      const parsed = insertJobSchema.parse(req.body);
-      const job = await storage.createJob({
-        ...parsed,
-        employerId: req.user!.id // Use authenticated user ID
+      const parsed = insertJobSchema.parse({
+        ...req.body,
+        employerId: req.user!.id // Add employerId before validation
       });
+      const job = await storage.createJob(parsed);
 
       logger.info('Job created', { jobId: job.id, employerId: req.user!.id });
       res.status(201).json(job);
@@ -132,8 +140,17 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
   });
 
   // Job Application routes
-  app.get("/api/jobs/:jobId/applications", async (req, res) => {
+  app.get("/api/jobs/:jobId/applications", ensureAuthenticated, ensureRole('employer'), async (req: AuthenticatedRequest, res) => {
     try {
+      // Verify employer can only see applications for their own jobs
+      const job = await storage.getJob(req.params.jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      if (job.employerId !== req.user!.id) {
+        return res.status(403).json({ message: "You can only view applications for your own jobs" });
+      }
+
       const applications = await storage.getApplicationsForJob(req.params.jobId);
       res.json(applications);
     } catch (error) {
@@ -141,8 +158,13 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
     }
   });
 
-  app.get("/api/workers/:workerId/applications", async (req, res) => {
+  app.get("/api/workers/:workerId/applications", ensureAuthenticated, ensureRole('worker'), async (req: AuthenticatedRequest, res) => {
     try {
+      // Workers can only view their own applications
+      if (req.params.workerId !== req.user!.id) {
+        return res.status(403).json({ message: "You can only view your own applications" });
+      }
+
       const applications = await storage.getApplicationsForWorker(req.params.workerId);
       res.json(applications);
     } catch (error) {
@@ -153,11 +175,11 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
   // Create application - workers only
   app.post("/api/applications", ensureAuthenticated, ensureRole('worker'), async (req: AuthenticatedRequest, res, next) => {
     try {
-      const parsed = insertJobApplicationSchema.parse(req.body);
-      const application = await storage.createApplication({
-        ...parsed,
-        workerId: req.user!.id // Use authenticated user ID
+      const parsed = insertJobApplicationSchema.parse({
+        ...req.body,
+        workerId: req.user!.id // Add workerId before validation
       });
+      const application = await storage.createApplication(parsed);
 
       logger.info('Application created', { applicationId: application.id, jobId: parsed.jobId });
       res.status(201).json(application);
@@ -166,14 +188,61 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
     }
   });
 
-  app.patch("/api/applications/:id/status", async (req, res) => {
+  app.patch("/api/applications/:id/status", ensureAuthenticated, async (req: AuthenticatedRequest, res) => {
     try {
       const { status } = updateStatusSchema.parse(req.body);
-      const application = await storage.updateApplicationStatus(req.params.id, status);
+
+      // Get the application to verify permissions
+      const application = await storage.getApplicationById(req.params.id);
       if (!application) {
         return res.status(404).json({ message: "Application not found" });
       }
-      res.json(application);
+
+      // Get job details for authorization
+      const job = await storage.getJob(application.jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      // Authorization check: only job employer or application worker can update status
+      const canUpdate = (req.user!.role === 'employer' && job.employerId === req.user!.id) ||
+                       (req.user!.role === 'worker' && application.workerId === req.user!.id);
+
+      if (!canUpdate) {
+        return res.status(403).json({ message: "You can only update applications for your own jobs or applications" });
+      }
+
+      // Additional business logic: Only employers can accept/reject, only workers can withdraw
+      if (status === 'accepted' || status === 'rejected') {
+        if (req.user!.role !== 'employer' || job.employerId !== req.user!.id) {
+          return res.status(403).json({ message: "Only job employers can accept or reject applications" });
+        }
+
+        // If accepting, we need to assign the worker atomically
+        if (status === 'accepted') {
+          const result = await storage.acceptApplicationWithJobAssignment(
+            req.params.id,
+            application.jobId,
+            application.workerId
+          );
+          if (!result) {
+            return res.status(400).json({
+              message: "Failed to accept application. The job may already be assigned or in incorrect state."
+            });
+          }
+          return res.json(result.application);
+        }
+      } else if (status === 'withdrawn') {
+        if (req.user!.role !== 'worker' || application.workerId !== req.user!.id) {
+          return res.status(403).json({ message: "Only the applicant can withdraw their application" });
+        }
+      }
+
+      const updatedApplication = await storage.updateApplicationStatus(req.params.id, status);
+      if (!updatedApplication) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+      res.json(updatedApplication);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid status data", error: error.errors });
@@ -183,7 +252,7 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
   });
 
   // Job Assignment and Completion routes
-  app.post("/api/jobs/:id/assign", async (req, res) => {
+  app.post("/api/jobs/:id/assign", ensureAuthenticated, ensureRole('employer'), async (req: AuthenticatedRequest, res) => {
     try {
       const { workerId } = assignWorkerSchema.parse(req.body);
       
@@ -192,10 +261,15 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
       if (!job) {
         return res.status(404).json({ message: "Job not found" });
       }
-      
+
+      // Ensure employer can only assign workers to their own jobs
+      if (job.employerId !== req.user!.id) {
+        return res.status(403).json({ message: "You can only assign workers to your own jobs" });
+      }
+
       if (job.status !== "open") {
-        return res.status(400).json({ 
-          message: `Cannot assign worker to job with status '${job.status}'. Job must be 'open'.` 
+        return res.status(400).json({
+          message: `Cannot assign worker to job with status '${job.status}'. Job must be 'open'.`
         });
       }
       
@@ -228,23 +302,33 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
     }
   });
 
-  app.post("/api/jobs/:id/complete", async (req, res) => {
+  app.post("/api/jobs/:id/complete", ensureAuthenticated, async (req: AuthenticatedRequest, res) => {
     try {
       // Validate job exists and is in correct state
       const job = await storage.getJob(req.params.id);
       if (!job) {
         return res.status(404).json({ message: "Job not found" });
       }
-      
-      if (job.status !== "in_progress") {
-        return res.status(400).json({ 
-          message: `Cannot complete job with status '${job.status}'. Job must be 'in_progress'.` 
+
+      // Authorization: Both employers and assigned workers can mark job as complete
+      const canComplete = (req.user!.role === 'employer' && job.employerId === req.user!.id) ||
+                         (req.user!.role === 'worker' && job.assignedWorkerId === req.user!.id);
+
+      if (!canComplete) {
+        return res.status(403).json({
+          message: "You can only complete jobs you own or are assigned to"
         });
       }
-      
+
+      if (job.status !== "in_progress") {
+        return res.status(400).json({
+          message: `Cannot complete job with status '${job.status}'. Job must be 'in_progress'.`
+        });
+      }
+
       if (!job.assignedWorkerId) {
-        return res.status(400).json({ 
-          message: "Cannot complete job without an assigned worker" 
+        return res.status(400).json({
+          message: "Cannot complete job without an assigned worker"
         });
       }
       
@@ -257,7 +341,7 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
   });
 
   // Payment routes
-  app.post("/api/payments/create-order", async (req, res) => {
+  app.post("/api/payments/create-order", ensureAuthenticated, ensureRole('employer'), async (req: AuthenticatedRequest, res) => {
     try {
       const { jobId } = req.body;
 
@@ -272,6 +356,11 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
       const job = await storage.getJob(jobId);
       if (!job) {
         return res.status(404).json({ message: "Job not found" });
+      }
+
+      // Ensure employer can only create payments for their own jobs
+      if (job.employerId !== req.user!.id) {
+        return res.status(403).json({ message: "You can only create payments for your own jobs" });
       }
 
       if (job.status !== "awaiting_payment") {
@@ -331,7 +420,7 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
     }
   });
 
-  app.post("/api/payments/verify", async (req, res) => {
+  app.post("/api/payments/verify", ensureAuthenticated, ensureRole('employer'), async (req: AuthenticatedRequest, res) => {
     try {
       const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = verifyPaymentSchema.parse(req.body);
 
@@ -359,9 +448,14 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
 
       // Find payment by order ID using storage interface
       const payment = await storage.getPaymentByOrderId(razorpayOrderId);
-      
+
       if (!payment) {
         return res.status(404).json({ message: "Payment not found" });
+      }
+
+      // Ensure employer can only verify payments for their own jobs
+      if (payment.employerId !== req.user!.id) {
+        return res.status(403).json({ message: "You can only verify payments for your own jobs" });
       }
 
       // Use atomic transaction to update both payment and job status
@@ -389,12 +483,18 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
     }
   });
 
-  app.get("/api/payments/job/:jobId", async (req, res) => {
+  app.get("/api/payments/job/:jobId", ensureAuthenticated, async (req: AuthenticatedRequest, res) => {
     try {
       const payment = await storage.getPaymentForJob(req.params.jobId);
       if (!payment) {
         return res.status(404).json({ message: "Payment not found" });
       }
+
+      // Authorization: Only employer or assigned worker can view payment details
+      if (payment.employerId !== req.user!.id && payment.workerId !== req.user!.id) {
+        return res.status(403).json({ message: "You can only view payments for your own jobs" });
+      }
+
       res.json(payment);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch payment" });
@@ -402,9 +502,15 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
   });
 
   // Message routes
-  app.get("/api/messages/:userId1/:userId2", async (req, res) => {
+  app.get("/api/messages/:userId1/:userId2", ensureAuthenticated, async (req: AuthenticatedRequest, res) => {
     try {
       const { userId1, userId2 } = req.params;
+
+      // Authorization: Users can only view conversations they are part of
+      if (req.user!.id !== userId1 && req.user!.id !== userId2) {
+        return res.status(403).json({ message: "You can only view your own conversations" });
+      }
+
       const messages = await storage.getMessagesForConversation(userId1, userId2);
       res.json(messages);
     } catch (error) {
@@ -415,11 +521,11 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
   // Send message - authenticated users only
   app.post("/api/messages", ensureAuthenticated, async (req: AuthenticatedRequest, res, next) => {
     try {
-      const parsed = insertMessageSchema.parse(req.body);
-      const message = await storage.createMessage({
-        ...parsed,
-        senderId: req.user!.id // Use authenticated user ID
+      const parsed = insertMessageSchema.parse({
+        ...req.body,
+        senderId: req.user!.id // Add senderId before validation
       });
+      const message = await storage.createMessage(parsed);
 
       logger.info('Message sent', { messageId: message.id, receiverId: parsed.receiverId });
       res.status(201).json(message);
@@ -428,9 +534,20 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
     }
   });
 
-  app.patch("/api/messages/:id/read", async (req, res) => {
+  app.patch("/api/messages/:id/read", ensureAuthenticated, async (req: AuthenticatedRequest, res) => {
     try {
       updateMessageReadSchema.parse(req.body); // Validate request even though we don't use the value
+
+      // Verify user can only mark their own received messages as read
+      const message = await storage.getMessage(req.params.id);
+      if (!message) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+
+      if (message.receiverId !== req.user!.id) {
+        return res.status(403).json({ message: "You can only mark your own messages as read" });
+      }
+
       await storage.markMessageAsRead(req.params.id);
       res.json({ success: true });
     } catch (error) {

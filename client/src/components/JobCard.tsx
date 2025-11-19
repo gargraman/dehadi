@@ -1,17 +1,7 @@
 import { useLocation } from 'wouter';
-import { 
-  LocationOn, 
-  Work, 
-  AccessTime,
-  PlayArrow,
-  Payment,
-  CheckCircle,
-  Done,
-  Cancel 
-} from '@mui/icons-material';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { LocationOn, CurrencyRupee } from '@mui/icons-material';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { getWorkTypeImage } from '@/lib/workTypeImages';
 
 interface JobCardProps {
@@ -28,43 +18,22 @@ interface JobCardProps {
   status?: string;
 }
 
-// Get status icon and color based on job status
-function getStatusBadge(status: string) {
-  const statusMap: Record<string, { icon: JSX.Element; label: string; variant: 'default' | 'secondary' | 'outline' }> = {
-    open: { 
-      icon: <Work sx={{ fontSize: 16 }} />, 
-      label: 'Open', 
-      variant: 'default' 
-    },
-    in_progress: { 
-      icon: <PlayArrow sx={{ fontSize: 16 }} />, 
-      label: 'In Progress', 
-      variant: 'default' 
-    },
-    awaiting_payment: { 
-      icon: <Payment sx={{ fontSize: 16 }} />, 
-      label: 'Awaiting Payment', 
-      variant: 'secondary' 
-    },
-    paid: { 
-      icon: <CheckCircle sx={{ fontSize: 16 }} />, 
-      label: 'Paid', 
-      variant: 'default' 
-    },
-    completed: { 
-      icon: <Done sx={{ fontSize: 16 }} />, 
-      label: 'Completed', 
-      variant: 'default' 
-    },
-    cancelled: { 
-      icon: <Cancel sx={{ fontSize: 16 }} />, 
-      label: 'Cancelled', 
-      variant: 'outline' 
-    },
+// Get simple work type emoji
+const getWorkTypeEmoji = (workType: string) => {
+  const emojiMap: Record<string, string> = {
+    mason: '🧱',
+    electrician: '⚡',
+    plumber: '🔧',
+    carpenter: '🔨',
+    painter: '🎨',
+    helper: '🤝',
+    driver: '🚗',
+    cleaner: '✨',
+    cook: '👨‍🍳',
+    security: '🛡️',
   };
-
-  return statusMap[status] || statusMap.open;
-}
+  return emojiMap[workType.toLowerCase()] || '💼';
+};
 
 export default function JobCard({
   id,
@@ -80,104 +49,89 @@ export default function JobCard({
   status = 'open',
 }: JobCardProps) {
   const [, navigate] = useLocation();
-  const wageLabel = wageType === 'daily' ? '/day' : wageType === 'hourly' ? '/hour' : '';
-  const workImage = getWorkTypeImage(title);
-  const statusInfo = getStatusBadge(status);
+  const wageLabel = wageType === 'daily' ? '/दिन' : wageType === 'hourly' ? '/घंटा' : '';
+  const workEmoji = getWorkTypeEmoji(title);
+
+  // Simple status check
+  const isAvailable = status === 'open';
 
   return (
-    <Card 
-      className="hover-elevate active-elevate-2 overflow-hidden cursor-pointer" 
+    <Card
+      className={`overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-xl active:scale-98 border-2 ${
+        isAvailable ? 'border-green-200 bg-white' : 'border-gray-200 bg-gray-50'
+      }`}
       data-testid={`job-card-${id}`}
       onClick={() => navigate(`/jobs/${id}`)}
     >
-      {/* Work Type Image */}
-      <div className="relative h-40 overflow-hidden bg-muted">
-        <img 
-          src={workImage} 
-          alt={title}
-          className="w-full h-full object-cover"
-          data-testid={`job-image-${id}`}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-        <Badge 
-          variant="secondary" 
-          className="absolute top-3 right-3 bg-chart-3 text-white font-semibold px-3" 
-          data-testid={`wage-${id}`}
-        >
-          ₹{wage}{wageLabel}
-        </Badge>
-        {status !== 'open' && (
-          <Badge 
-            variant={statusInfo.variant}
-            className="absolute top-3 left-3 bg-background/90 backdrop-blur-sm flex items-center gap-1" 
-            data-testid={`status-${id}`}
-          >
-            {statusInfo.icon}
-            <span>{statusInfo.label}</span>
-          </Badge>
-        )}
-      </div>
+      <CardContent className="p-6">
+        {/* Main Job Info - Large and Clear */}
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="flex items-center gap-3 flex-1">
+            <div className="text-4xl">{workEmoji}</div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-800 mb-1" data-testid={`job-title-${id}`}>
+                {title}
+              </h3>
+              <p className="text-base text-gray-600 flex items-center gap-1" data-testid={`location-${id}`}>
+                <LocationOn sx={{ fontSize: 20, color: '#ef4444' }} />
+                {location}
+              </p>
+            </div>
+          </div>
 
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-foreground line-clamp-1" data-testid={`job-title-${id}`}>
-              {title}
-            </h3>
-            <p className="text-sm text-muted-foreground mt-0.5" data-testid={`employer-name-${id}`}>
-              {employer}
+          {/* Large, Prominent Wage */}
+          <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-3 rounded-2xl text-center min-w-[100px]">
+            <div className="flex items-center justify-center gap-1 mb-1">
+              <CurrencyRupee sx={{ fontSize: 18 }} />
+              <span className="text-2xl font-bold">{wage}</span>
+            </div>
+            <p className="text-xs opacity-90">{wageLabel}</p>
+          </div>
+        </div>
+
+        {/* Worker Count - If Multiple */}
+        {headcount && headcount > 1 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4" data-testid={`headcount-${id}`}>
+            <p className="text-blue-800 font-semibold text-center">
+              👥 {headcount} लोग चाहिए ({headcount} people needed)
             </p>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1" data-testid={`location-${id}`}>
-            <LocationOn sx={{ fontSize: 18 }} />
-            <span>{location}</span>
-          </div>
-          {distance && (
-            <span className="text-chart-4 font-medium" data-testid={`distance-${id}`}>
-              {distance}
-            </span>
-          )}
-        </div>
-
-        {headcount && headcount > 1 && (
-          <div className="flex items-center gap-1 text-sm text-muted-foreground" data-testid={`headcount-${id}`}>
-            <Work sx={{ fontSize: 18 }} />
-            <span>{headcount} positions</span>
-          </div>
         )}
 
-        <div className="flex flex-wrap gap-2">
-          {skills.slice(0, 3).map((skill, index) => (
-            <Badge key={index} variant="outline" className="text-xs" data-testid={`skill-${id}-${index}`}>
-              {skill}
-            </Badge>
-          ))}
-          {skills.length > 3 && (
-            <Badge variant="outline" className="text-xs">
-              +{skills.length - 3} more
-            </Badge>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between gap-4 pt-2">
-          <div className="flex items-center gap-1 text-xs text-muted-foreground" data-testid={`posted-time-${id}`}>
-            <AccessTime sx={{ fontSize: 16 }} />
-            <span>{postedTime}</span>
-          </div>
-          <Button 
-            className="min-h-9" 
-            data-testid={`apply-button-${id}`}
-            onClick={(e) => {
-              e.stopPropagation();
+        {/* Large Apply Button */}
+        <Button
+          className={`w-full h-16 text-xl font-bold rounded-2xl transition-all duration-200 ${
+            isAvailable
+              ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}
+          data-testid={`apply-button-${id}`}
+          disabled={!isAvailable}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isAvailable) {
               navigate(`/jobs/${id}`);
-            }}
-          >
-            Apply Now
-          </Button>
+            }
+          }}
+        >
+          {isAvailable ? (
+            <>
+              🤝 काम चाहिए
+              <br />
+              <span className="text-sm opacity-90">Apply for Work</span>
+            </>
+          ) : (
+            <>
+              ❌ काम बंद
+              <br />
+              <span className="text-sm opacity-75">Work Closed</span>
+            </>
+          )}
+        </Button>
+
+        {/* Time posted - Small and Simple */}
+        <div className="text-center mt-3">
+          <p className="text-sm text-gray-500">⏰ {postedTime}</p>
         </div>
       </CardContent>
     </Card>

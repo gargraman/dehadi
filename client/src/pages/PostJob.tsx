@@ -1,285 +1,291 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useMutation } from '@tanstack/react-query';
-import { ArrowBack, Work as WorkIcon } from '@mui/icons-material';
+import { ArrowBack, CurrencyRupee, LocationOn, Add } from '@mui/icons-material';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { Hammer, Zap, Wrench, PaintBucket, Users, Car, Sparkles, ChefHat, Shield } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
+// Simple work types with emojis
 const workTypes = [
-  { id: 'mason', name: 'Mason', icon: Hammer },
-  { id: 'electrician', name: 'Electrician', icon: Zap },
-  { id: 'plumber', name: 'Plumber', icon: Wrench },
-  { id: 'carpenter', name: 'Carpenter', icon: Hammer },
-  { id: 'painter', name: 'Painter', icon: PaintBucket },
-  { id: 'helper', name: 'Helper', icon: Users },
-  { id: 'driver', name: 'Driver', icon: Car },
-  { id: 'cleaner', name: 'Cleaner', icon: Sparkles },
-  { id: 'cook', name: 'Cook', icon: ChefHat },
-  { id: 'security', name: 'Security Guard', icon: Shield },
+  { id: 'mason', name: '🧱 मेसन', english: 'Mason' },
+  { id: 'electrician', name: '⚡ बिजली वाला', english: 'Electrician' },
+  { id: 'plumber', name: '🔧 नल वाला', english: 'Plumber' },
+  { id: 'carpenter', name: '🔨 बढ़ई', english: 'Carpenter' },
+  { id: 'painter', name: '🎨 रंगाई', english: 'Painter' },
+  { id: 'helper', name: '🤝 मददगार', english: 'Helper' },
+  { id: 'driver', name: '🚗 ड्राइवर', english: 'Driver' },
+  { id: 'cleaner', name: '✨ सफाई', english: 'Cleaner' },
 ];
-
-const jobSchema = z.object({
-  workType: z.string().min(1, 'Please select a work type'),
-  title: z.string().min(3, 'Title must be at least 3 characters'),
-  description: z.string().min(20, 'Description must be at least 20 characters'),
-  location: z.string().min(3, 'Location is required'),
-  wageType: z.enum(['daily', 'hourly', 'fixed']),
-  wage: z.coerce.number().min(1, 'Wage is required'),
-  headcount: z.coerce.number().min(1).optional().default(1),
-});
-
-type JobFormData = z.infer<typeof jobSchema>;
 
 export default function PostJob() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
-  const form = useForm({
-    resolver: zodResolver(jobSchema),
-    defaultValues: {
-      workType: '',
-      title: '',
-      description: '',
-      location: '',
-      wageType: 'daily' as const,
-      wage: 0,
-      headcount: 1,
-    },
-  });
+  // Super simple form state - no complex validation
+  const [workType, setWorkType] = useState('');
+  const [location, setLocation] = useState('');
+  const [wage, setWage] = useState('');
+  const [headcount, setHeadcount] = useState('1');
+  const [description, setDescription] = useState('');
 
   const postJobMutation = useMutation({
-    mutationFn: async (data: JobFormData) => {
-      // Get employer ID from localStorage (temporary until auth is implemented)
-      const onboardingData = localStorage.getItem('onboardingData');
-      const employerId = onboardingData ? JSON.parse(onboardingData).userId || 'temp-employer-id' : 'temp-employer-id';
+    mutationFn: async () => {
+      // Basic validation
+      if (!workType || !location || !wage) {
+        throw new Error('कृपया सभी जानकारी भरें (Please fill all information)');
+      }
+
+      // Get employer ID from auth (simplified)
+      const employerId = 'temp-employer-id'; // TODO: Get from auth context
 
       return await apiRequest('POST', '/api/jobs', {
         employerId,
-        workType: data.workType,
-        title: data.title,
-        description: data.description,
-        location: data.location,
-        wageType: data.wageType,
-        wage: data.wage,
-        headcount: data.headcount,
+        workType,
+        title: `${workTypes.find(t => t.id === workType)?.english} Required`,
+        description: description || `${workTypes.find(t => t.id === workType)?.english} needed in ${location}`,
+        location,
+        wageType: 'daily',
+        wage: parseInt(wage),
+        headcount: parseInt(headcount),
       });
     },
     onSuccess: () => {
       toast({
-        title: 'Job Posted Successfully!',
-        description: 'Your job posting is now live and workers can apply.',
+        title: '✅ काम का इश्तिहार पोस्ट हो गया!',
+        description: 'अब मजदूर आपके काम के लिए अप्लाई कर सकेंगे।',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/jobs'] });
       navigate('/');
     },
-    onError: () => {
+    onError: (error) => {
       toast({
-        title: 'Failed to Post Job',
-        description: 'Please try again later.',
+        title: '❌ पोस्ट नहीं हुआ',
+        description: error instanceof Error ? error.message : 'कुछ गड़बड़ी हुई। फिर से कोशिश करें।',
         variant: 'destructive',
       });
     },
   });
 
-  const onSubmit = (data: JobFormData) => {
-    postJobMutation.mutate(data);
+  const handleSubmit = () => {
+    postJobMutation.mutate();
   };
 
+  const isFormValid = workType && location && wage && parseInt(wage) >= 100;
+
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-card border-b border-card-border">
-        <div className="flex items-center gap-3 px-4 py-3">
+    <div className="min-h-screen bg-white pb-32">
+      {/* Simple Header */}
+      <header className="bg-orange-500 text-white px-4 py-6">
+        <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate('/')}
+            className="text-white hover:bg-white/20"
             data-testid="button-back"
           >
             <ArrowBack sx={{ fontSize: 24 }} />
           </Button>
-          <div>
-            <h1 className="text-xl font-bold text-foreground">Post a Job</h1>
-            <p className="text-xs text-muted-foreground">Find the right workers for your project</p>
+          <div className="flex-1 text-center">
+            <h1 className="text-2xl font-bold">📝 काम का इश्तिहार दें</h1>
+            <p className="text-orange-100">Post Your Work</p>
           </div>
         </div>
       </header>
 
-      <div className="p-4">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Work Type Selection */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Work Type</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <FormField
-                  control={form.control}
-                  name="workType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-work-type">
-                            <SelectValue placeholder="Select work type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {workTypes.map((type) => (
-                            <SelectItem key={type.id} value={type.id}>
-                              <div className="flex items-center gap-2">
-                                <type.icon className="w-4 h-4" />
-                                <span>{type.name}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
+      <div className="px-4 py-8 space-y-8">
+        {/* Work Type Selection */}
+        <div>
+          <div className="text-center mb-6">
+            <div className="text-6xl mb-3">💼</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">किस तरह का काम है?</h2>
+            <p className="text-lg text-gray-600">What type of work?</p>
+          </div>
 
-            {/* Job Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Job Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Job Title</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="e.g., Brick Mason for Residential Project" data-testid="input-title" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="Describe the work, requirements, and any specific details..."
-                          className="min-h-32"
-                          data-testid="input-description"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="e.g., Andheri West, Mumbai" data-testid="input-location" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Wage & Workers */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Wage & Workers</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="wageType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Payment Type</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-wage-type">
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="daily">Daily</SelectItem>
-                            <SelectItem value="hourly">Hourly</SelectItem>
-                            <SelectItem value="fixed">Fixed</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="wage"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Wage (₹)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" placeholder="850" data-testid="input-wage" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+          <div className="grid grid-cols-2 gap-4">
+            {workTypes.map((type) => (
+              <Button
+                key={type.id}
+                variant={workType === type.id ? "default" : "outline"}
+                className={`h-20 text-left p-4 rounded-2xl border-2 transition-all ${
+                  workType === type.id
+                    ? 'bg-orange-500 text-white border-orange-500 shadow-lg'
+                    : 'border-gray-300 hover:border-orange-400'
+                }`}
+                onClick={() => setWorkType(type.id)}
+              >
+                <div>
+                  <div className="text-lg font-bold">{type.name}</div>
+                  <div className="text-sm opacity-75">{type.english}</div>
                 </div>
+              </Button>
+            ))}
+          </div>
+        </div>
 
-                <FormField
-                  control={form.control}
-                  name="headcount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Number of Workers Needed</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="number" min="1" data-testid="input-headcount" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
+        {/* Location */}
+        <div>
+          <div className="text-center mb-6">
+            <div className="text-6xl mb-3">📍</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">काम कहाँ है?</h2>
+            <p className="text-lg text-gray-600">Where is the work?</p>
+          </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              size="lg"
-              disabled={postJobMutation.isPending}
-              data-testid="button-post-job"
-            >
-              {postJobMutation.isPending ? 'Posting...' : 'Post Job'}
-            </Button>
-          </form>
-        </Form>
+          <Input
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="जैसे: अंधेरी पश्चिम, मुंबई"
+            className="h-16 text-xl text-center rounded-2xl border-4 border-gray-300 focus:border-orange-500"
+            data-testid="input-location"
+          />
+
+          {location && (
+            <div className="mt-4 text-center bg-green-50 p-4 rounded-2xl">
+              <div className="flex items-center justify-center gap-2">
+                <LocationOn sx={{ fontSize: 24, color: '#10b981' }} />
+                <span className="text-lg font-semibold text-green-800">{location}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Wage */}
+        <div>
+          <div className="text-center mb-6">
+            <div className="text-6xl mb-3">💰</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">रोज कितने पैसे देंगे?</h2>
+            <p className="text-lg text-gray-600">Daily wage amount?</p>
+          </div>
+
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <CurrencyRupee sx={{ fontSize: 32, color: '#10b981' }} />
+              <Input
+                value={wage}
+                onChange={(e) => setWage(e.target.value)}
+                type="number"
+                min="100"
+                max="5000"
+                step="50"
+                placeholder="500"
+                className="h-20 text-4xl font-bold text-center w-40 rounded-2xl border-4 border-green-300 focus:border-green-500"
+                data-testid="input-wage"
+              />
+              <span className="text-2xl text-gray-600">/दिन</span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              {[300, 500, 800, 1000, 1500, 2000].map((amount) => (
+                <Button
+                  key={amount}
+                  variant="outline"
+                  onClick={() => setWage(amount.toString())}
+                  className={`p-4 rounded-xl border-2 text-lg font-semibold ${
+                    wage === amount.toString() ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-green-400'
+                  }`}
+                >
+                  ₹{amount}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* People Count */}
+        <div>
+          <div className="text-center mb-6">
+            <div className="text-6xl mb-3">👥</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">कितने लोग चाहिए?</h2>
+            <p className="text-lg text-gray-600">How many people needed?</p>
+          </div>
+
+          <div className="text-center">
+            <div className="mb-6">
+              <Input
+                value={headcount}
+                onChange={(e) => setHeadcount(e.target.value)}
+                type="number"
+                min="1"
+                max="20"
+                className="h-20 text-4xl font-bold text-center w-32 mx-auto rounded-2xl border-4 border-blue-300 focus:border-blue-500"
+                data-testid="input-headcount"
+              />
+              <p className="text-lg text-gray-600 mt-2">लोग चाहिए</p>
+            </div>
+
+            <div className="grid grid-cols-4 gap-3">
+              {[1, 2, 3, 4, 5, 6, 8, 10].map((count) => (
+                <Button
+                  key={count}
+                  variant="outline"
+                  onClick={() => setHeadcount(count.toString())}
+                  className={`p-4 rounded-xl border-2 text-lg font-semibold ${
+                    headcount === count.toString() ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-400'
+                  }`}
+                >
+                  {count}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Optional Description */}
+        <div>
+          <div className="text-center mb-6">
+            <div className="text-6xl mb-3">📝</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">और कुछ बताना चाहते हैं?</h2>
+            <p className="text-lg text-gray-600">Any other details? (Optional)</p>
+          </div>
+
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="जैसे: सुबह 8 बजे से शुरू, खाना मिलेगा..."
+            className="h-24 text-lg rounded-2xl border-2 border-gray-300 focus:border-orange-500"
+            rows={3}
+          />
+        </div>
+
+        {/* Submit Button */}
+        <div className="text-center">
+          <Button
+            size="lg"
+            onClick={handleSubmit}
+            disabled={!isFormValid || postJobMutation.isPending}
+            className="w-full h-24 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-2xl rounded-3xl disabled:opacity-50 disabled:cursor-not-allowed"
+            data-testid="button-post-job"
+          >
+            {postJobMutation.isPending ? (
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <div className="text-xl font-bold">पोस्ट हो रहा है...</div>
+                <div className="text-sm opacity-90">Posting...</div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <Add sx={{ fontSize: 48 }} />
+                <div className="text-2xl font-bold">✅ काम का इश्तिहार पोस्ट करें</div>
+                <div className="text-sm opacity-90">Post Your Job</div>
+              </div>
+            )}
+          </Button>
+
+          {!isFormValid && (
+            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-2xl">
+              <p className="text-yellow-800">
+                ⚠️ कृपया सभी जरूरी जानकारी भरें
+              </p>
+              <p className="text-sm text-yellow-600">
+                Please fill all required information
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { TrendingUp, TrendingDown } from '@mui/icons-material';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 
 interface StatsCardProps {
   title: string;
@@ -28,7 +28,7 @@ export default function StatsCard({ title, value, icon, trend, subtitle, testId 
               <div className={`flex items-center gap-1 mt-2 text-sm ${
                 trend.isPositive ? 'text-chart-3' : 'text-destructive'
               }`} data-testid={`${testId}-trend`}>
-                {trend.isPositive ? <TrendingUp sx={{ fontSize: 16 }} /> : <TrendingDown sx={{ fontSize: 16 }} />}
+                {trend.isPositive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                 <span className="font-medium">{Math.abs(trend.value)}%</span>
               </div>
             )}

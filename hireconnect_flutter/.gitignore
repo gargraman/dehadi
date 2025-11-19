@@ -1,0 +1,51 @@
+# Miscellaneous
+*.class
+*.lock
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog
+.history
+.svn/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Android Studio / IntelliJ related
+.gradle/
+**/build/
+*.keystore
+local.properties
+
+# Flutter
+.dart_tool/
+.devtools
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.idea/
+*.g.dart
+*.freezed.dart
+**/ios/.symlinks/**
+**/android/.gradle/**
+**/android/cmake/**
+**/android/app/cmake-build/**
+
+# iOS
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/build/
+**/ios/Flutter/.symlinks
+
+# Assets and build artifacts
+**/build/
+**/assets/fonts/
+**/assets/images/
+
+# Environment variables
+.env
