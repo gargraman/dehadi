@@ -8,7 +8,7 @@ import { useLocation } from 'wouter';
 import { useJobs, useUpdateJobStatus, useCompleteJob } from '@/hooks/useJobs';
 import { useAuth } from '@/lib/auth';
 import JobCard from '@/components/JobCard';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 export default function MyJobs() {
   const [, navigate] = useLocation();

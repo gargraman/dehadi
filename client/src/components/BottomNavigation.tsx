@@ -1,4 +1,4 @@
-import { Home, Work, Chat, Search } from '@mui/icons-material';
+import { Home, Briefcase, MessageCircle, Search } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/lib/auth';
 
@@ -6,13 +6,13 @@ import { useAuth } from '@/lib/auth';
 const workerNavigationItems = [
   { icon: Home, label: '🏠 घर', englishLabel: 'Home', path: '/', testId: 'nav-home' },
   { icon: Search, label: '🔍 खोजें', englishLabel: 'Search', path: '/search', testId: 'nav-search' },
-  { icon: Chat, label: '💬 बात करें', englishLabel: 'Messages', path: '/messages', testId: 'nav-messages' },
+  { icon: MessageCircle, label: '💬 बात करें', englishLabel: 'Messages', path: '/messages', testId: 'nav-messages' },
 ];
 
 const employerNavigationItems = [
   { icon: Home, label: '🏠 घर', englishLabel: 'Home', path: '/', testId: 'nav-home' },
-  { icon: Work, label: '📝 काम दें', englishLabel: 'Post Work', path: '/post-job', testId: 'nav-post-job' },
-  { icon: Chat, label: '💬 बात करें', englishLabel: 'Messages', path: '/messages', testId: 'nav-messages' },
+  { icon: Briefcase, label: '📝 काम दें', englishLabel: 'Post Work', path: '/post-job', testId: 'nav-post-job' },
+  { icon: MessageCircle, label: '💬 बात करें', englishLabel: 'Messages', path: '/messages', testId: 'nav-messages' },
 ];
 
 export default function BottomNavigation() {
@@ -37,7 +37,7 @@ export default function BottomNavigation() {
                     : 'text-gray-700 hover:bg-blue-50 active:scale-95 hover:shadow-lg'
                 }`}
               >
-                <Icon sx={{ fontSize: isActive ? 40 : 36 }} className={isActive ? 'drop-shadow-lg' : ''} />
+                <Icon size={isActive ? 40 : 36} className={isActive ? 'drop-shadow-lg' : ''} />
                 <span className={`font-bold leading-tight text-center ${isActive ? 'text-lg' : 'text-base'}`}>
                   <div className="mb-1">{label}</div>
                   <div className={`text-xs ${isActive ? 'text-blue-100' : 'text-gray-500'}`}>{englishLabel}</div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FilterList } from '@mui/icons-material';
+import { SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -52,7 +52,7 @@ export default function FilterPanel() {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="outline" size="icon" className="h-12 w-12" data-testid="button-filters">
-          <FilterList sx={{ fontSize: 24 }} />
+          <SlidersHorizontal size={24} />
         </Button>
       </SheetTrigger>
       <SheetContent side="bottom" className="h-[85vh]">

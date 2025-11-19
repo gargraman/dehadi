@@ -1,4 +1,4 @@
-import { LocationOn, Verified, Star } from '@mui/icons-material';
+import { MapPin, BadgeCheck, Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -55,7 +55,7 @@ export default function WorkerCard({
             </Avatar>
             {isVerified && (
               <div className="absolute -bottom-1 -right-1 bg-chart-3 rounded-full p-0.5" data-testid={`verified-badge-${id}`}>
-                <Verified sx={{ fontSize: 16, color: 'white' }} />
+                <BadgeCheck size={16} className="text-white" />
               </div>
             )}
             <div 
@@ -70,7 +70,7 @@ export default function WorkerCard({
             </h3>
             <div className="flex items-center gap-2 mt-1">
               <div className="flex items-center gap-1" data-testid={`rating-${id}`}>
-                <Star sx={{ fontSize: 16, color: 'hsl(var(--chart-5))' }} />
+                <Star size={16} className="text-chart-5 fill-chart-5" />
                 <span className="text-sm font-medium">{rating.toFixed(1)}</span>
                 <span className="text-xs text-muted-foreground">({reviewCount})</span>
               </div>
@@ -94,7 +94,7 @@ export default function WorkerCard({
             </div>
 
             <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground" data-testid={`location-${id}`}>
-              <LocationOn sx={{ fontSize: 14 }} />
+              <MapPin size={14} />
               <span>{location}</span>
               {distance && <span className="text-chart-4 font-medium ml-1">{distance}</span>}
             </div>

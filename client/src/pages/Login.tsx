@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Eye, EyeOff, Person, Lock } from '@mui/icons-material';
+import { Loader2, Eye, EyeOff, User, Lock } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
 interface LoginResponse {
@@ -66,7 +66,7 @@ export default function Login() {
           {/* Username Field - Bigger and Friendlier */}
           <div>
             <div className="text-center mb-3">
-              <Person sx={{ fontSize: 32, color: '#3b82f6' }} />
+              <User size={32} className="text-blue-500 mx-auto" />
               <p className="text-xl font-semibold text-gray-800">📱 फोन नंबर या नाम</p>
               <p className="text-sm text-gray-600">Phone or Username</p>
             </div>
@@ -86,7 +86,7 @@ export default function Login() {
           {/* Password Field - Bigger and Friendlier */}
           <div>
             <div className="text-center mb-3">
-              <Lock sx={{ fontSize: 32, color: '#10b981' }} />
+              <Lock size={32} className="text-green-500 mx-auto" />
               <p className="text-xl font-semibold text-gray-800">🔒 पासवर्ड</p>
               <p className="text-sm text-gray-600">Password</p>
             </div>
@@ -109,9 +109,9 @@ export default function Login() {
                 data-testid="toggle-password-visibility"
               >
                 {showPassword ? (
-                  <EyeOff sx={{ fontSize: 28, color: '#6b7280' }} />
+                  <EyeOff size={28} className="text-gray-500" />
                 ) : (
-                  <Eye sx={{ fontSize: 28, color: '#6b7280' }} />
+                  <Eye size={28} className="text-gray-500" />
                 )}
               </button>
             </div>

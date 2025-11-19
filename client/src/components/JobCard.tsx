@@ -1,5 +1,5 @@
 import { useLocation } from 'wouter';
-import { LocationOn, CurrencyRupee } from '@mui/icons-material';
+import { MapPin, IndianRupee } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { getWorkTypeImage } from '@/lib/workTypeImages';
@@ -73,7 +73,7 @@ export default function JobCard({
                 {title}
               </h3>
               <p className="text-base text-gray-600 flex items-center gap-1" data-testid={`location-${id}`}>
-                <LocationOn sx={{ fontSize: 20, color: '#ef4444' }} />
+                <MapPin size={20} className="text-red-500" />
                 {location}
               </p>
             </div>
@@ -82,7 +82,7 @@ export default function JobCard({
           {/* Large, Prominent Wage */}
           <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-3 rounded-2xl text-center min-w-[100px]">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <CurrencyRupee sx={{ fontSize: 18 }} />
+              <IndianRupee size={18} />
               <span className="text-2xl font-bold">{wage}</span>
             </div>
             <p className="text-xs opacity-90">{wageLabel}</p>

@@ -4,8 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Chat, Phone, VideoCall } from '@mui/icons-material';
-import { Loader2 } from 'lucide-react';
+import { MessageCircle, Phone, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useConversations } from '@/hooks/useMessages';
 
@@ -126,7 +125,7 @@ export default function Messages() {
 
                     {/* Last Message */}
                     <div className="flex items-center gap-2 mb-3">
-                      <Chat sx={{ fontSize: 18, color: '#6b7280' }} />
+                      <MessageCircle size={18} className="text-gray-500" />
                       <p className="text-gray-600 line-clamp-2 flex-1">
                         {conversation.lastMessage}
                       </p>
@@ -149,7 +148,7 @@ export default function Messages() {
                             console.log('Phone call to', conversation.name);
                           }}
                         >
-                          <Phone sx={{ fontSize: 16 }} />
+                          <Phone size={16} />
                         </Button>
 
                         <Button
@@ -160,7 +159,7 @@ export default function Messages() {
                             handleOpenConversation(conversation);
                           }}
                         >
-                          <Chat sx={{ fontSize: 16 }} className="mr-2" />
+                          <MessageCircle size={16} className="mr-2" />
                           बात करें
                         </Button>
                       </div>

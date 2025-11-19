@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUpdateApplicationStatus } from '@/hooks/useJobs';
 import { useAuth } from '@/lib/auth';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import type { EnrichedJobApplication } from '@shared/schema';
 
 interface ApplicationCardProps {
@@ -26,22 +26,22 @@ interface ApplicationCardProps {
 function getStatusBadge(status: string) {
   const statusMap: Record<string, { icon: JSX.Element; label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
     pending: {
-      icon: <HourglassEmpty sx={{ fontSize: 16 }} />,
+      icon: <Timer size={16} />,
       label: 'Pending',
       variant: 'outline'
     },
     accepted: {
-      icon: <CheckCircle sx={{ fontSize: 16 }} />,
+      icon: <CheckCircle size={16} />,
       label: 'Accepted',
       variant: 'default'
     },
     rejected: {
-      icon: <Cancel sx={{ fontSize: 16 }} />,
+      icon: <X size={16} />,
       label: 'Rejected',
       variant: 'destructive'
     },
     withdrawn: {
-      icon: <Cancel sx={{ fontSize: 16 }} />,
+      icon: <X size={16} />,
       label: 'Withdrawn',
       variant: 'secondary'
     },
@@ -149,11 +149,11 @@ export default function ApplicationCard({
 
               <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
                 <div className="flex items-center gap-1">
-                  <LocationOn sx={{ fontSize: 16 }} />
+                  <MapPin size={16} />
                   <span>{job.location}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Work sx={{ fontSize: 16 }} />
+                  <Briefcase size={16} />
                   <span>₹{job.wage}/{job.wageType === 'daily' ? 'day' : job.wageType === 'hourly' ? 'hour' : 'fixed'}</span>
                 </div>
               </div>
@@ -197,7 +197,7 @@ export default function ApplicationCard({
 
         <div className="flex items-center justify-between gap-4 pt-2">
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <AccessTime sx={{ fontSize: 16 }} />
+            <Clock size={16} />
             <span>Applied {new Date(application.createdAt).toLocaleDateString()}</span>
           </div>
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import JobCard from '@/components/JobCard';
-import { MyLocation } from '@mui/icons-material';
+import { MapPinned } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -55,7 +55,7 @@ export default function Nearby() {
             disabled={isLocating}
             data-testid="button-locate-me"
           >
-            <MyLocation sx={{ fontSize: 18 }} className="mr-1" />
+            <MapPinned size={18} className="mr-1" />
             {isLocating ? 'Locating...' : 'Locate Me'}
           </Button>
         </div>
@@ -89,7 +89,7 @@ export default function Nearby() {
       {/* Map Placeholder */}
       <div className="mx-4 mt-4 h-48 bg-muted rounded-lg flex items-center justify-center border border-border">
         <div className="text-center">
-          <MyLocation sx={{ fontSize: 48 }} className="text-muted-foreground mb-2" />
+          <MapPinned size={48} className="text-muted-foreground mb-2" />
           <p className="text-sm text-muted-foreground">Map View</p>
           <p className="text-xs text-muted-foreground mt-1">Showing jobs within {selectedRadius} km</p>
         </div>

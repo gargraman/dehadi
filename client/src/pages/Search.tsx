@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowBack, Search as SearchIcon, Clear, Mic } from '@mui/icons-material';
+import { ArrowLeft, Search as SearchIcon, X, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import JobCard from '@/components/JobCard';
@@ -50,7 +50,7 @@ export default function Search() {
             onClick={() => navigate('/')}
             className="text-white hover:bg-white/20"
           >
-            <ArrowBack sx={{ fontSize: 24 }} />
+            <ArrowLeft size={24} />
           </Button>
           <div className="flex-1 text-center">
             <h1 className="text-2xl font-bold">🔍 काम खोजें</h1>
@@ -67,7 +67,7 @@ export default function Search() {
             className="h-20 w-20 rounded-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-xl mb-4"
             onClick={() => console.log('Voice search activated')}
           >
-            <Mic sx={{ fontSize: 40 }} />
+            <Mic size={40} />
           </Button>
           <p className="text-lg font-semibold text-gray-700">🎤 बोलकर खोजें</p>
           <p className="text-sm text-gray-500">Speak to Search</p>
@@ -89,7 +89,7 @@ export default function Search() {
                 onClick={() => setSearchText('')}
                 className="absolute right-4 top-1/2 -translate-y-1/2"
               >
-                <Clear sx={{ fontSize: 24, color: '#6b7280' }} />
+                <X size={24} className="text-gray-500" />
               </button>
             )}
           </div>

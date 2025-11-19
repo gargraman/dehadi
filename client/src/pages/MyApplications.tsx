@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowBack, Work, HourglassEmpty, CheckCircle, Cancel } from '@mui/icons-material';
+import { ArrowLeft, Briefcase, Timer, CheckCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,15 +23,15 @@ export default function MyApplications() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
-        return <HourglassEmpty sx={{ fontSize: 20 }} className="text-yellow-600" />;
+        return <Timer size={20} className="text-yellow-600" />;
       case 'accepted':
-        return <CheckCircle sx={{ fontSize: 20 }} className="text-green-600" />;
+        return <CheckCircle size={20} className="text-green-600" />;
       case 'rejected':
-        return <Cancel sx={{ fontSize: 20 }} className="text-red-600" />;
+        return <X size={20} className="text-red-600" />;
       case 'withdrawn':
-        return <Cancel sx={{ fontSize: 20 }} className="text-gray-600" />;
+        return <X size={20} className="text-gray-600" />;
       default:
-        return <Work sx={{ fontSize: 20 }} />;
+        return <Briefcase size={20} />;
     }
   };
 
@@ -80,7 +80,7 @@ export default function MyApplications() {
             onClick={() => navigate(-1)}
             className="h-10 w-10"
           >
-            <ArrowBack />
+            <ArrowLeft />
           </Button>
           <div>
             <h1 className="text-xl font-bold text-foreground">My Applications</h1>
@@ -176,7 +176,7 @@ export default function MyApplications() {
             ) : applications.length === 0 ? (
               <Card>
                 <CardContent className="p-6 text-center">
-                  <Work sx={{ fontSize: 48 }} className="text-muted-foreground mx-auto mb-4" />
+                  <Briefcase size={48} className="text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Applications Yet</h3>
                   <p className="text-muted-foreground mb-4">
                     You haven't applied to any jobs yet. Start exploring opportunities!
@@ -203,7 +203,7 @@ export default function MyApplications() {
             {pendingApplications.length === 0 ? (
               <Card>
                 <CardContent className="p-6 text-center">
-                  <HourglassEmpty sx={{ fontSize: 48 }} className="text-muted-foreground mx-auto mb-4" />
+                  <Timer size={48} className="text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Pending Applications</h3>
                   <p className="text-muted-foreground">
                     All your applications have been reviewed.
@@ -227,7 +227,7 @@ export default function MyApplications() {
             {acceptedApplications.length === 0 ? (
               <Card>
                 <CardContent className="p-6 text-center">
-                  <CheckCircle sx={{ fontSize: 48 }} className="text-muted-foreground mx-auto mb-4" />
+                  <CheckCircle size={48} className="text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Accepted Applications</h3>
                   <p className="text-muted-foreground">
                     Keep applying to more jobs to increase your chances!
@@ -254,7 +254,7 @@ export default function MyApplications() {
             {[...rejectedApplications, ...withdrawnApplications].length === 0 ? (
               <Card>
                 <CardContent className="p-6 text-center">
-                  <Cancel sx={{ fontSize: 48 }} className="text-muted-foreground mx-auto mb-4" />
+                  <X size={48} className="text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Other Applications</h3>
                   <p className="text-muted-foreground">
                     No rejected or withdrawn applications.

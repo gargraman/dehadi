@@ -1,4 +1,4 @@
-import { Work, Business, AdminPanelSettings, People } from '@mui/icons-material';
+import { Briefcase, Building2, Shield, Users } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 const roles = [
@@ -6,28 +6,28 @@ const roles = [
     id: 'worker',
     title: 'Worker',
     description: 'Find jobs near you',
-    icon: Work,
+    icon: Briefcase,
     color: 'text-chart-1',
   },
   {
     id: 'employer',
     title: 'Employer',
     description: 'Post jobs & hire workers',
-    icon: Business,
+    icon: Building2,
     color: 'text-chart-2',
   },
   {
     id: 'ngo',
     title: 'NGO/CSC Partner',
     description: 'Assist worker registration',
-    icon: People,
+    icon: Users,
     color: 'text-chart-4',
   },
   {
     id: 'admin',
     title: 'Admin',
     description: 'Platform management',
-    icon: AdminPanelSettings,
+    icon: Shield,
     color: 'text-chart-3',
   },
 ];
@@ -57,7 +57,7 @@ export default function RoleSelector({ onRoleSelect }: RoleSelectorProps) {
               <CardContent className="p-6">
                 <div className="flex flex-col items-center text-center gap-3">
                   <div className={`p-4 bg-primary/10 rounded-full ${role.color}`}>
-                    <Icon sx={{ fontSize: 40 }} />
+                    <Icon size={40} />
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-foreground">{role.title}</h3>

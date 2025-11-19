@@ -6,8 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowBack, Send, MoreVert } from '@mui/icons-material';
-import { Loader2 } from 'lucide-react';
+import { ArrowLeft, Send, MoreVertical, Loader2 } from 'lucide-react';
 import { useMessagesForConversation, useSendMessage, useMarkMessageAsRead } from '@/hooks/useMessages';
 import { useAuth } from '@/lib/auth';
 import { format } from 'date-fns';
@@ -124,7 +123,7 @@ export default function Conversation() {
             onClick={handleGoBack}
             data-testid="button-back"
           >
-            <ArrowBack sx={{ fontSize: 20 }} />
+            <ArrowLeft size={20} />
           </Button>
 
           <div className="flex items-center gap-3 flex-1">
@@ -143,7 +142,7 @@ export default function Conversation() {
           </div>
 
           <Button variant="ghost" size="sm" data-testid="button-menu">
-            <MoreVert sx={{ fontSize: 20 }} />
+            <MoreVertical size={20} />
           </Button>
         </div>
       </header>
@@ -243,7 +242,7 @@ export default function Conversation() {
             {sendMessageMutation.isPending ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Send sx={{ fontSize: 20 }} />
+              <Send size={20} />
             )}
           </Button>
         </form>

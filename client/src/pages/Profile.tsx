@@ -15,19 +15,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Edit,
-  Verified,
-  Star,
-  Work,
-  LocationOn,
-  Language,
-  Brightness4,
-  ExitToApp,
-  CreditCard,
-  MyLocation
-} from '@mui/icons-material';
-import { Hammer, Zap, Droplets, Wrench, Paintbrush, HandHelping, Car, Sparkles, ChefHat, Shield, Loader2 } from 'lucide-react';
+import { Hammer, Zap, Droplets, Wrench, Paintbrush, HandHelping, Car, Sparkles, ChefHat, Shield, Loader2, Pencil, BadgeCheck, Star, Briefcase, MapPin, Globe, Moon, LogOut, CreditCard, MapPinned } from 'lucide-react';
 
 // Mock additional profile data that would come from other endpoints
 const mockStats = {
@@ -65,11 +53,11 @@ const skillCategories = [
 ];
 
 const menuItems = [
-  { icon: Edit, label: 'Edit Profile', action: 'edit' },
-  { icon: Work, label: 'Work History', action: 'history' },
+  { icon: Pencil, label: 'Edit Profile', action: 'edit' },
+  { icon: Briefcase, label: 'Work History', action: 'history' },
   { icon: Star, label: 'Reviews & Ratings', action: 'reviews' },
-  { icon: Brightness4, label: 'Dark Mode', action: 'darkmode', hasToggle: true },
-  { icon: ExitToApp, label: 'Logout', action: 'logout', isDanger: true },
+  { icon: Moon, label: 'Dark Mode', action: 'darkmode', hasToggle: true },
+  { icon: LogOut, label: 'Logout', action: 'logout', isDanger: true },
 ];
 
 export default function Profile() {
@@ -219,7 +207,7 @@ export default function Profile() {
                 </Avatar>
                 {/* For now, showing verified for all users - in real app this would be based on verification status */}
                 <div className="absolute -bottom-1 -right-1 bg-chart-3 rounded-full p-1">
-                  <Verified sx={{ fontSize: 20, color: 'white' }} />
+                  <BadgeCheck size={20} className="text-white" />
                 </div>
               </div>
 
@@ -233,7 +221,7 @@ export default function Profile() {
                     </Badge>
                   </div>
                   <Button variant="outline" size="sm" data-testid="button-edit-profile">
-                    <Edit sx={{ fontSize: 18 }} />
+                    <Pencil size={18} />
                   </Button>
                 </div>
 
@@ -241,7 +229,7 @@ export default function Profile() {
                 {user.role === 'worker' && (
                   <>
                     <div className="flex items-center gap-1 mt-2">
-                      <Star sx={{ fontSize: 18, color: 'hsl(var(--chart-5))' }} />
+                      <Star size={18} className="text-chart-5 fill-chart-5" />
                       <span className="font-semibold text-foreground">{mockStats.rating}</span>
                       <span className="text-sm text-muted-foreground">({mockStats.reviewCount} reviews)</span>
                     </div>
@@ -250,7 +238,7 @@ export default function Profile() {
 
                 {user.location && (
                   <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
-                    <LocationOn sx={{ fontSize: 16 }} />
+                    <MapPin size={16} />
                     <span>{user.location}</span>
                   </div>
                 )}
@@ -268,7 +256,7 @@ export default function Profile() {
                     onClick={() => handleEditClick('skills', userSkills)}
                     data-testid="button-edit-skills"
                   >
-                    <Edit sx={{ fontSize: 16 }} />
+                    <Pencil size={16} />
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -322,7 +310,7 @@ export default function Profile() {
             {/* Language */}
             <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
               <div className="flex items-center gap-3">
-                <Language sx={{ fontSize: 20 }} className="text-muted-foreground" />
+                <Globe size={20} className="text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">Language</p>
                   <p className="text-sm font-medium text-foreground">
@@ -338,7 +326,7 @@ export default function Profile() {
             {user.location && (
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-3">
-                  <LocationOn sx={{ fontSize: 20 }} className="text-muted-foreground" />
+                  <MapPin size={20} className="text-muted-foreground" />
                   <div>
                     <p className="text-xs text-muted-foreground">Location</p>
                     <p className="text-sm font-medium text-foreground">{user.location}</p>
@@ -350,7 +338,7 @@ export default function Profile() {
                   onClick={() => handleEditClick('location', user.location || '')}
                   data-testid="button-edit-location"
                 >
-                  <Edit sx={{ fontSize: 18 }} />
+                  <Pencil size={18} />
                 </Button>
               </div>
             )}
@@ -358,7 +346,7 @@ export default function Profile() {
             {/* Username */}
             <div className="flex items-center p-3 rounded-lg bg-muted/50">
               <div className="flex items-center gap-3">
-                <CreditCard sx={{ fontSize: 20 }} className="text-muted-foreground" />
+                <CreditCard size={20} className="text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">Username</p>
                   <p className="text-sm font-medium text-foreground">
@@ -384,7 +372,7 @@ export default function Profile() {
               }`}
               data-testid={`menu-${item.action}`}
             >
-              <Icon sx={{ fontSize: 24 }} />
+              <Icon size={24} />
               <span className="flex-1 text-left font-medium">{item.label}</span>
               {item.hasToggle && (
                 <div className={`w-11 h-6 rounded-full transition-colors ${
@@ -434,7 +422,7 @@ export default function Profile() {
                   className="w-full"
                   data-testid="button-edit-use-location"
                 >
-                  <MyLocation sx={{ fontSize: 20 }} className="mr-2" />
+                  <MapPinned size={20} className="mr-2" />
                   {isLocating ? 'Getting location...' : 'Use Current Location'}
                 </Button>
               </div>

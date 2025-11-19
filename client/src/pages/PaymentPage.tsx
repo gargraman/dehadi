@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useRoute } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { ArrowBack, CheckCircle, Payment as PaymentIcon } from '@mui/icons-material';
+import { ArrowLeft, CheckCircle, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -213,7 +213,7 @@ export default function PaymentPage() {
             onClick={() => navigate(`/jobs/${jobId}`)}
             data-testid="button-back"
           >
-            <ArrowBack />
+            <ArrowLeft />
           </Button>
           <h1 className="text-xl font-semibold text-foreground">Payment</h1>
         </div>
@@ -225,7 +225,7 @@ export default function PaymentPage() {
           <Card className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <CheckCircle className="text-green-600 dark:text-green-400" sx={{ fontSize: 32 }} />
+                <CheckCircle size={32} className="text-green-600 dark:text-green-400" />
                 <div>
                   <p className="font-semibold text-green-900 dark:text-green-100">Payment Completed</p>
                   <p className="text-sm text-green-700 dark:text-green-300">
@@ -241,7 +241,7 @@ export default function PaymentPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <PaymentIcon />
+              <CreditCard />
               Job Payment Details
             </CardTitle>
           </CardHeader>

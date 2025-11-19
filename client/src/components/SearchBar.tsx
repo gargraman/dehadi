@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Mic } from '@mui/icons-material';
+import { Search, Mic } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -31,7 +31,7 @@ export default function SearchBar({
         <div className="relative flex-1">
           <Search
             className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-            sx={{ fontSize: 24 }}
+            size={24}
           />
           <Input
             type="search"
@@ -50,7 +50,7 @@ export default function SearchBar({
           className="h-16 px-6 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl shadow-lg"
           data-testid="button-search"
         >
-          <Search sx={{ fontSize: 24 }} />
+          <Search size={24} />
         </Button>
       </div>
 

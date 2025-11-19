@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Language } from '@mui/icons-material';
+import { Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -44,7 +44,7 @@ export default function LanguageSwitcher() {
           className="h-10 w-10"
           data-testid="button-language-switcher"
         >
-          <Language sx={{ fontSize: 24 }} />
+          <Globe size={24} />
         </Button>
       </SheetTrigger>
       <SheetContent side="bottom" className="h-[80vh]">

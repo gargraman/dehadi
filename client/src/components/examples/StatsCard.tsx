@@ -1,5 +1,5 @@
 import StatsCard from '../StatsCard';
-import { Work, Person, AttachMoney, CheckCircle } from '@mui/icons-material';
+import { Briefcase, User, DollarSign, CheckCircle } from 'lucide-react';
 
 export default function StatsCardExample() {
   return (
@@ -7,14 +7,14 @@ export default function StatsCardExample() {
       <StatsCard
         title="Active Jobs"
         value="245"
-        icon={<Work sx={{ fontSize: 32 }} />}
+        icon={<Briefcase size={32} />}
         trend={{ value: 12, isPositive: true }}
         testId="stats-active-jobs"
       />
       <StatsCard
         title="Total Workers"
         value="1,234"
-        icon={<Person sx={{ fontSize: 32 }} />}
+        icon={<User size={32} />}
         trend={{ value: 8, isPositive: true }}
         testId="stats-total-workers"
       />
@@ -22,7 +22,7 @@ export default function StatsCardExample() {
         title="Placements"
         value="892"
         subtitle="This month"
-        icon={<CheckCircle sx={{ fontSize: 32 }} />}
+        icon={<CheckCircle size={32} />}
         trend={{ value: 5, isPositive: false }}
         testId="stats-placements"
       />
@@ -30,7 +30,7 @@ export default function StatsCardExample() {
         title="Avg Wage"
         value="₹875"
         subtitle="Per day"
-        icon={<AttachMoney sx={{ fontSize: 32 }} />}
+        icon={<DollarSign size={32} />}
         testId="stats-avg-wage"
       />
     </div>

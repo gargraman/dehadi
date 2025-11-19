@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowBack, Work, HourglassEmpty, CheckCircle, Cancel, Person } from '@mui/icons-material';
+import { ArrowLeft, Briefcase, Timer, CheckCircle, X, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,13 +27,13 @@ export default function JobApplications() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
-        return <HourglassEmpty sx={{ fontSize: 20 }} className="text-yellow-600" />;
+        return <Timer size={20} className="text-yellow-600" />;
       case 'accepted':
-        return <CheckCircle sx={{ fontSize: 20 }} className="text-green-600" />;
+        return <CheckCircle size={20} className="text-green-600" />;
       case 'rejected':
-        return <Cancel sx={{ fontSize: 20 }} className="text-red-600" />;
+        return <X size={20} className="text-red-600" />;
       default:
-        return <Person sx={{ fontSize: 20 }} />;
+        return <User size={20} />;
     }
   };
 
@@ -113,7 +113,7 @@ export default function JobApplications() {
             onClick={() => navigate(`/jobs/${jobId}`)}
             className="h-10 w-10"
           >
-            <ArrowBack />
+            <ArrowLeft />
           </Button>
           <div className="flex-1">
             <h1 className="text-xl font-bold text-foreground">Applications</h1>
@@ -223,7 +223,7 @@ export default function JobApplications() {
             ) : applications.length === 0 ? (
               <Card>
                 <CardContent className="p-6 text-center">
-                  <Person sx={{ fontSize: 48 }} className="text-muted-foreground mx-auto mb-4" />
+                  <User size={48} className="text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Applications Yet</h3>
                   <p className="text-muted-foreground mb-4">
                     No one has applied to this job yet. Your job posting is live and workers can apply.
@@ -255,7 +255,7 @@ export default function JobApplications() {
             {pendingApplications.length === 0 ? (
               <Card>
                 <CardContent className="p-6 text-center">
-                  <HourglassEmpty sx={{ fontSize: 48 }} className="text-muted-foreground mx-auto mb-4" />
+                  <Timer size={48} className="text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Pending Applications</h3>
                   <p className="text-muted-foreground">
                     All applications have been reviewed.
@@ -267,7 +267,7 @@ export default function JobApplications() {
                 <Card className="bg-yellow-50 border-yellow-200">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 text-yellow-800">
-                      <HourglassEmpty sx={{ fontSize: 20 }} />
+                      <Timer size={20} />
                       <span className="font-medium">
                         {statusCounts.pending} application{statusCounts.pending !== 1 ? 's' : ''} waiting for your review
                       </span>
@@ -289,7 +289,7 @@ export default function JobApplications() {
             {acceptedApplications.length === 0 ? (
               <Card>
                 <CardContent className="p-6 text-center">
-                  <CheckCircle sx={{ fontSize: 48 }} className="text-muted-foreground mx-auto mb-4" />
+                  <CheckCircle size={48} className="text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Accepted Applications</h3>
                   <p className="text-muted-foreground">
                     You haven't accepted any applications yet.
@@ -313,7 +313,7 @@ export default function JobApplications() {
             {rejectedApplications.length === 0 ? (
               <Card>
                 <CardContent className="p-6 text-center">
-                  <Cancel sx={{ fontSize: 48 }} className="text-muted-foreground mx-auto mb-4" />
+                  <X size={48} className="text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Rejected Applications</h3>
                   <p className="text-muted-foreground">
                     You haven't rejected any applications.

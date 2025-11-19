@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowBack, CurrencyRupee, LocationOn, Add } from '@mui/icons-material';
+import { ArrowLeft, IndianRupee, MapPin, Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { Loader2 } from 'lucide-react';
 
 // Simple work types with emojis
 const workTypes = [
@@ -88,7 +87,7 @@ export default function PostJob() {
             className="text-white hover:bg-white/20"
             data-testid="button-back"
           >
-            <ArrowBack sx={{ fontSize: 24 }} />
+            <ArrowLeft size={24} />
           </Button>
           <div className="flex-1 text-center">
             <h1 className="text-2xl font-bold">📝 काम का इश्तिहार दें</h1>
@@ -146,7 +145,7 @@ export default function PostJob() {
           {location && (
             <div className="mt-4 text-center bg-green-50 p-4 rounded-2xl">
               <div className="flex items-center justify-center gap-2">
-                <LocationOn sx={{ fontSize: 24, color: '#10b981' }} />
+                <MapPin size={24} className="text-green-500" />
                 <span className="text-lg font-semibold text-green-800">{location}</span>
               </div>
             </div>
@@ -163,7 +162,7 @@ export default function PostJob() {
 
           <div className="text-center">
             <div className="flex items-center justify-center gap-2 mb-6">
-              <CurrencyRupee sx={{ fontSize: 32, color: '#10b981' }} />
+              <IndianRupee size={32} className="text-green-500" />
               <Input
                 value={wage}
                 onChange={(e) => setWage(e.target.value)}
@@ -268,7 +267,7 @@ export default function PostJob() {
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <Add sx={{ fontSize: 48 }} />
+                <Plus size={48} />
                 <div className="text-2xl font-bold">✅ काम का इश्तिहार पोस्ट करें</div>
                 <div className="text-sm opacity-90">Post Your Job</div>
               </div>

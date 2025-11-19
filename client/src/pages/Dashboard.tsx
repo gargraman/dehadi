@@ -1,6 +1,6 @@
 import StatsCard from '@/components/StatsCard';
 import JobCard from '@/components/JobCard';
-import { Work, Person, AttachMoney, CheckCircle, TrendingUp } from '@mui/icons-material';
+import { Briefcase, User, DollarSign, CheckCircle, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -32,14 +32,14 @@ export default function Dashboard() {
         <StatsCard
           title="Active Jobs"
           value="245"
-          icon={<Work sx={{ fontSize: 32 }} />}
+          icon={<Briefcase size={32} />}
           trend={{ value: 12, isPositive: true }}
           testId="stats-active-jobs"
         />
         <StatsCard
           title="Total Workers"
           value="1,234"
-          icon={<Person sx={{ fontSize: 32 }} />}
+          icon={<User size={32} />}
           trend={{ value: 8, isPositive: true }}
           testId="stats-total-workers"
         />
@@ -47,7 +47,7 @@ export default function Dashboard() {
           title="Placements"
           value="892"
           subtitle="This month"
-          icon={<CheckCircle sx={{ fontSize: 32 }} />}
+          icon={<CheckCircle size={32} />}
           trend={{ value: 5, isPositive: false }}
           testId="stats-placements"
         />
@@ -55,7 +55,7 @@ export default function Dashboard() {
           title="Avg Wage"
           value="₹875"
           subtitle="Per day"
-          icon={<AttachMoney sx={{ fontSize: 32 }} />}
+          icon={<DollarSign size={32} />}
           testId="stats-avg-wage"
         />
       </div>
@@ -84,7 +84,7 @@ export default function Dashboard() {
           <TabsContent value="pending" className="mt-4">
             <Card>
               <CardContent className="py-8 text-center">
-                <CheckCircle sx={{ fontSize: 48 }} className="text-muted-foreground mx-auto mb-2" />
+                <CheckCircle size={48} className="text-muted-foreground mx-auto mb-2" />
                 <p className="text-muted-foreground">No pending reviews</p>
               </CardContent>
             </Card>
@@ -107,7 +107,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Active Users (24h)</span>
                 <div className="flex items-center gap-1 text-chart-3">
-                  <TrendingUp sx={{ fontSize: 16 }} />
+                  <TrendingUp size={16} />
                   <span className="font-semibold">456</span>
                 </div>
               </div>

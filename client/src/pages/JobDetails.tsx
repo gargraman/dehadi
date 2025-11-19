@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useRoute, useLocation } from 'wouter';
-import { ArrowBack, LocationOn, CurrencyRupee, Work, Phone } from '@mui/icons-material';
+import { ArrowLeft, MapPin, IndianRupee, Briefcase, Phone, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth';
 import { useJob, useCreateApplication, useJobApplications } from '@/hooks/useJobs';
@@ -106,7 +105,7 @@ export default function JobDetails() {
               onClick={() => navigate('/')}
               className="text-white hover:bg-white/20"
             >
-              <ArrowBack sx={{ fontSize: 24 }} />
+              <ArrowLeft size={24} />
             </Button>
             <div className="flex-1 text-center">
               <h1 className="text-2xl font-bold">❌ काम नहीं मिला</h1>
@@ -143,7 +142,7 @@ export default function JobDetails() {
             className="text-white hover:bg-white/20"
             data-testid="button-back"
           >
-            <ArrowBack sx={{ fontSize: 24 }} />
+            <ArrowLeft size={24} />
           </Button>
           <div className="flex-1 text-center">
             <h1 className="text-2xl font-bold">💼 काम की जानकारी</h1>
@@ -168,7 +167,7 @@ export default function JobDetails() {
             {/* Wage - Most Important */}
             <div className="text-center bg-green-50 p-6 rounded-2xl">
               <div className="flex items-center justify-center gap-2 mb-2">
-                <CurrencyRupee sx={{ fontSize: 32, color: '#10b981' }} />
+                <IndianRupee size={32} className="text-green-500" />
                 <span className="text-4xl font-bold text-green-800" data-testid="text-wage">
                   {job.wage}
                 </span>
@@ -179,7 +178,7 @@ export default function JobDetails() {
             {/* Location */}
             <div className="text-center bg-blue-50 p-6 rounded-2xl">
               <div className="flex items-center justify-center gap-2 mb-2">
-                <LocationOn sx={{ fontSize: 32, color: '#3b82f6' }} />
+                <MapPin size={32} className="text-blue-500" />
                 <span className="text-2xl font-bold text-blue-800" data-testid="text-location">
                   {job.location}
                 </span>
@@ -244,7 +243,7 @@ export default function JobDetails() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-2">
-                    <Work sx={{ fontSize: 48 }} />
+                    <Briefcase size={48} />
                     <div className="text-2xl font-bold">🤝 इस काम के लिए अप्लाई करें</div>
                     <div className="text-sm opacity-90">Apply for This Job</div>
                   </div>

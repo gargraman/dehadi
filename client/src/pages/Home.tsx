@@ -1,5 +1,5 @@
 import { useLocation } from 'wouter';
-import { Mic, Work, LocationOn, Search, Add } from '@mui/icons-material';
+import { Mic, Briefcase, MapPin, Search, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
 import { useJobs } from '@/hooks/useJobs';
@@ -63,7 +63,7 @@ export default function Home() {
           }}
         >
           <div className="flex flex-col items-center gap-2">
-            <Mic sx={{ fontSize: 48 }} />
+            <Mic size={48} />
             <div className="text-xl font-bold">🎤 बोलकर खोजें</div>
             <div className="text-sm opacity-90">Speak to Find Work</div>
           </div>
@@ -77,7 +77,7 @@ export default function Home() {
           onClick={() => navigate('/search')}
         >
           <div className="flex flex-col items-center gap-2">
-            <Search sx={{ fontSize: 48, color: '#3b82f6' }} />
+            <Search size={48} className="text-blue-500" />
             <div className="text-xl font-bold text-blue-600">🔍 टाइप करके खोजें</div>
             <div className="text-sm text-blue-500">Search by Typing</div>
           </div>
@@ -91,7 +91,7 @@ export default function Home() {
             onClick={() => navigate('/post-job')}
           >
             <div className="flex flex-col items-center gap-2">
-              <Add sx={{ fontSize: 48 }} />
+              <Plus size={48} />
               <div className="text-xl font-bold">📝 काम का इश्तिहार दें</div>
               <div className="text-sm opacity-90">Post Work</div>
             </div>

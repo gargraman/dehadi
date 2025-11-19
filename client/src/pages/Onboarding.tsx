@@ -4,8 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MyLocation, ArrowForward, Check } from '@mui/icons-material';
-import { Hammer, Zap, Droplets, Wrench, Paintbrush, HandHelping, Car, Sparkles, ChefHat, Shield } from 'lucide-react';
+import { MapPinned, ArrowRight, Check, Hammer, Zap, Droplets, Wrench, Paintbrush, HandHelping, Car, Sparkles, ChefHat, Shield } from 'lucide-react';
 
 const languages = [
   { code: 'en', name: 'English', native: 'English' },
@@ -209,7 +208,7 @@ export default function Onboarding() {
               data-testid="button-language-next"
             >
               Continue
-              <ArrowForward sx={{ fontSize: 20 }} className="ml-2" />
+              <ArrowRight size={20} className="ml-2" />
             </Button>
           </div>
         )}
@@ -252,7 +251,7 @@ export default function Onboarding() {
                   className="w-full min-h-12"
                   data-testid="button-use-current-location"
                 >
-                  <MyLocation sx={{ fontSize: 20 }} className="mr-2" />
+                  <MapPinned size={20} className="mr-2" />
                   {isLocating ? 'Getting location...' : 'Use Current Location'}
                 </Button>
               </CardContent>
@@ -274,7 +273,7 @@ export default function Onboarding() {
                 data-testid="button-location-next"
               >
                 Continue
-                <ArrowForward sx={{ fontSize: 20 }} className="ml-2" />
+                <ArrowRight size={20} className="ml-2" />
               </Button>
             </div>
           </div>
@@ -346,7 +345,7 @@ export default function Onboarding() {
                 data-testid="button-skills-next"
               >
                 Continue
-                <ArrowForward sx={{ fontSize: 20 }} className="ml-2" />
+                <ArrowRight size={20} className="ml-2" />
               </Button>
             </div>
           </div>
@@ -406,7 +405,7 @@ export default function Onboarding() {
                 data-testid="button-complete-onboarding"
               >
                 Complete Setup
-                <Check sx={{ fontSize: 20 }} className="ml-2" />
+                <Check size={20} className="ml-2" />
               </Button>
             </div>
           </div>
