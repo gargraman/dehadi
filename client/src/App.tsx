@@ -22,10 +22,17 @@ import JobApplications from "@/pages/JobApplications";
 import MyJobs from "@/pages/MyJobs";
 import NotFound from "@/pages/not-found";
 import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const [, setLocation] = useLocation();
   const { isAuthenticated, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      setLocation('/login');
+    }
+  }, [isLoading, isAuthenticated, setLocation]);
 
   if (isLoading) {
     return (
@@ -39,7 +46,6 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   }
 
   if (!isAuthenticated) {
-    setLocation('/login');
     return null;
   }
 
@@ -49,6 +55,12 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 function PublicRoute({ component: Component }: { component: React.ComponentType }) {
   const { isAuthenticated, isLoading } = useAuth();
   const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      setLocation('/');
+    }
+  }, [isLoading, isAuthenticated, setLocation]);
 
   if (isLoading) {
     return (
@@ -62,7 +74,6 @@ function PublicRoute({ component: Component }: { component: React.ComponentType 
   }
 
   if (isAuthenticated) {
-    setLocation('/');
     return null;
   }
 
