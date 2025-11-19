@@ -6,6 +6,17 @@ import { createRequire } from 'module';
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
+  const errorMsg = `DATABASE_URL environment variable is not set.
+
+To fix this:
+1. In Replit, click the "Tools" menu
+2. Select "Database"
+3. Click "Add Database" to provision a PostgreSQL database
+4. The DATABASE_URL will be automatically configured for both development and production
+
+If you've already provisioned a database, make sure the DATABASE_URL secret is configured in your deployment settings.`;
+  
+  console.error(errorMsg);
   throw new Error("DATABASE_URL must be set. Did you forget to provision a database?");
 }
 
