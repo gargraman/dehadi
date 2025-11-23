@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
+import '../config/api_config.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://localhost:5000/api/auth'; // Update to your backend URL
+  static String get baseUrl => ApiConfig.authBaseUrl;
 
   // Store auth token and user data
   static Future<void> _saveUser(User user) async {

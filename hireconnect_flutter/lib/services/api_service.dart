@@ -6,10 +6,11 @@ import '../models/job.dart';
 import '../models/job_application.dart';
 import '../models/message.dart';
 import '../models/payment.dart';
+import '../config/api_config.dart';
 import 'auth_service.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:5000/api'; // Update to your backend URL
+  static String get baseUrl => ApiConfig.baseUrl;
 
   // Helper method to create authenticated requests
   static Future<http.Response> _authenticatedRequest(

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'config/api_config.dart';
 import 'services/auth_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/employer_dashboard_screen.dart';
 
 void main() {
+  // Log API configuration on app start
+  ApiConfig.logConfig();
   runApp(const HireConnectApp());
 }
 
