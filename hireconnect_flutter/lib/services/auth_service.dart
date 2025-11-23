@@ -5,7 +5,8 @@ import '../models/user.dart';
 import '../config/api_config.dart';
 
 class AuthService {
-  static String get baseUrl => ApiConfig.authBaseUrl;
+  // Helper to build auth URLs
+  static String _url(String endpoint) => ApiConfig.getAuthUrl(endpoint);
 
   // Store auth token and user data
   static Future<void> _saveUser(User user) async {
@@ -52,7 +53,7 @@ class AuthService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/register'),
+        Uri.parse(_url('/register')),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': username,
@@ -97,7 +98,7 @@ class AuthService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/login'),
+        Uri.parse(_url('/login')),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': username,
@@ -111,7 +112,7 @@ class AuthService {
 
         // Get full user details after login
         final userResponse = await http.get(
-          Uri.parse('$baseUrl/me'),
+          Uri.parse(_url('/me')),
           headers: {
             'Content-Type': 'application/json',
             // Session cookie should be automatically included by http client
@@ -150,7 +151,7 @@ class AuthService {
   static Future<void> logoutUser() async {
     try {
       await http.post(
-        Uri.parse('$baseUrl/logout'),
+        Uri.parse(_url('/logout')),
         headers: {'Content-Type': 'application/json'},
       );
     } catch (e) {
@@ -165,7 +166,7 @@ class AuthService {
   static Future<Map<String, dynamic>?> getAuthStatus() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/status'),
+        Uri.parse(_url('/status')),
         headers: {'Content-Type': 'application/json'},
       );
 

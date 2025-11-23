@@ -10,7 +10,8 @@ import '../config/api_config.dart';
 import 'auth_service.dart';
 
 class ApiService {
-  static String get baseUrl => ApiConfig.baseUrl;
+  // Helper to build API URLs
+  static String _url(String endpoint) => ApiConfig.getApiUrl(endpoint);
 
   // Helper method to create authenticated requests
   static Future<http.Response> _authenticatedRequest(
@@ -27,7 +28,7 @@ class ApiService {
     };
 
     http.Response response;
-    final url = '$baseUrl$endpoint';
+    final url = _url(endpoint);
 
     switch (method.toUpperCase()) {
       case 'GET':

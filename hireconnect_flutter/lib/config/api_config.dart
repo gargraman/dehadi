@@ -20,9 +20,6 @@ class ApiConfig {
     defaultValue: 'http://localhost:5000/api',
   );
 
-  // Auth endpoints
-  static String get authBaseUrl => '$baseUrl/auth';
-  
   // Feature flags
   static const bool enableDebugLogs = bool.fromEnvironment(
     'ENABLE_DEBUG_LOGS',
@@ -33,10 +30,23 @@ class ApiConfig {
   static const Duration requestTimeout = Duration(seconds: 30);
   static const Duration connectionTimeout = Duration(seconds: 10);
 
-  // Get the appropriate base URL based on the platform and environment
+  // Get the base API URL
   static String getBaseUrl() {
-    // You can add platform-specific logic here if needed
     return baseUrl;
+  }
+
+  // Get auth endpoint URL (baseUrl + /auth)
+  static String getAuthUrl(String endpoint) {
+    // Ensure endpoint starts with /
+    final path = endpoint.startsWith('/') ? endpoint : '/$endpoint';
+    return '$baseUrl/auth$path';
+  }
+
+  // Get API endpoint URL (baseUrl + endpoint)
+  static String getApiUrl(String endpoint) {
+    // Ensure endpoint starts with /
+    final path = endpoint.startsWith('/') ? endpoint : '/$endpoint';
+    return '$baseUrl$path';
   }
 
   // Log API configuration (for debugging)
@@ -44,7 +54,8 @@ class ApiConfig {
     if (enableDebugLogs) {
       print('=== HireConnect API Configuration ===');
       print('Base URL: $baseUrl');
-      print('Auth URL: $authBaseUrl');
+      print('Example Auth URL: ${getAuthUrl('/login')}');
+      print('Example API URL: ${getApiUrl('/jobs')}');
       print('Debug Logs: $enableDebugLogs');
       print('Request Timeout: ${requestTimeout.inSeconds}s');
       print('====================================');
