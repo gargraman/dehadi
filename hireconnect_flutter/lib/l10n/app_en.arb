@@ -1,0 +1,235 @@
+{
+  "@@locale": "en",
+  
+  "appTitle": "HireConnect",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  
+  "welcome": "Welcome to HireConnect",
+  "welcomeSubtitle": "Find jobs near you or hire skilled workers",
+  
+  "selectLanguage": "Select Language",
+  "selectLanguageSubtitle": "Choose your preferred language",
+  "continueButton": "Continue",
+  
+  "login": "Login",
+  "register": "Register",
+  "logout": "Logout",
+  "username": "Username",
+  "password": "Password",
+  "confirmPassword": "Confirm Password",
+  "forgotPassword": "Forgot Password?",
+  "dontHaveAccount": "Don't have an account?",
+  "alreadyHaveAccount": "Already have an account?",
+  "signUp": "Sign Up",
+  "signIn": "Sign In",
+  
+  "fullName": "Full Name",
+  "phoneNumber": "Phone Number",
+  "email": "Email",
+  "location": "Location",
+  "skills": "Skills",
+  "aadharNumber": "Aadhar Number",
+  
+  "worker": "Worker",
+  "employer": "Employer",
+  "selectRole": "Select Your Role",
+  "iAmWorker": "I am looking for work",
+  "iAmEmployer": "I want to hire workers",
+  
+  "home": "Home",
+  "search": "Search",
+  "nearby": "Nearby",
+  "messages": "Messages",
+  "profile": "Profile",
+  
+  "searchJobs": "Search Jobs",
+  "searchHint": "Search by job title, skill, or location",
+  "voiceSearch": "Voice Search",
+  "listening": "Listening...",
+  "tapToSpeak": "Tap to speak",
+  "speakNow": "Speak now",
+  
+  "recentJobs": "Recent Jobs",
+  "recommendedJobs": "Recommended for You",
+  "nearbyJobs": "Jobs Near You",
+  "allJobs": "All Jobs",
+  "noJobsFound": "No jobs found",
+  "tryDifferentSearch": "Try a different search or check back later",
+  
+  "jobDetails": "Job Details",
+  "applyNow": "Apply Now",
+  "applied": "Applied",
+  "applicationSent": "Application Sent",
+  "viewApplications": "View Applications",
+  
+  "workType": "Work Type",
+  "wageType": "Wage Type",
+  "dailyWage": "Daily",
+  "hourlyWage": "Hourly",
+  "fixedWage": "Fixed",
+  "wage": "Wage",
+  "perDay": "per day",
+  "perHour": "per hour",
+  "total": "total",
+  "headcount": "Workers Needed",
+  "postedBy": "Posted by",
+  "postedOn": "Posted on",
+  
+  "jobCategories": "Job Categories",
+  "mason": "Mason",
+  "electrician": "Electrician",
+  "plumber": "Plumber",
+  "carpenter": "Carpenter",
+  "painter": "Painter",
+  "cleaner": "Cleaner",
+  "driver": "Driver",
+  "helper": "Helper",
+  "cook": "Cook",
+  "gardener": "Gardener",
+  "security": "Security Guard",
+  "tailor": "Tailor",
+  "mechanic": "Mechanic",
+  "welder": "Welder",
+  "other": "Other",
+  
+  "jobStatus": "Status",
+  "statusOpen": "Open",
+  "statusInProgress": "In Progress",
+  "statusAwaitingPayment": "Awaiting Payment",
+  "statusPaid": "Paid",
+  "statusCompleted": "Completed",
+  "statusCancelled": "Cancelled",
+  
+  "applicationStatus": "Application Status",
+  "statusPending": "Pending",
+  "statusAccepted": "Accepted",
+  "statusRejected": "Rejected",
+  "statusWithdrawn": "Withdrawn",
+  
+  "postJob": "Post a Job",
+  "jobTitle": "Job Title",
+  "jobDescription": "Job Description",
+  "selectWorkType": "Select Work Type",
+  "enterLocation": "Enter Location",
+  "selectWageType": "Select Wage Type",
+  "enterWage": "Enter Wage Amount",
+  "numberOfWorkers": "Number of Workers",
+  "requiredSkills": "Required Skills",
+  "postJobButton": "Post Job",
+  "jobPosted": "Job Posted Successfully",
+  
+  "myJobs": "My Jobs",
+  "activeJobs": "Active Jobs",
+  "completedJobs": "Completed Jobs",
+  "applications": "Applications",
+  "noApplications": "No applications yet",
+  
+  "acceptApplication": "Accept",
+  "rejectApplication": "Reject",
+  "applicationAccepted": "Application Accepted",
+  "applicationRejected": "Application Rejected",
+  
+  "startJob": "Start Job",
+  "completeJob": "Complete Job",
+  "cancelJob": "Cancel Job",
+  "makePayment": "Make Payment",
+  "paymentSuccess": "Payment Successful",
+  "paymentFailed": "Payment Failed",
+  
+  "noMessages": "No messages yet",
+  "typeMessage": "Type a message",
+  "sendMessage": "Send",
+  
+  "editProfile": "Edit Profile",
+  "saveChanges": "Save Changes",
+  "changesSaved": "Changes Saved",
+  "updatePhoto": "Update Photo",
+  
+  "myEarnings": "My Earnings",
+  "totalEarnings": "Total Earnings",
+  "thisMonth": "This Month",
+  "lastMonth": "Last Month",
+  
+  "settings": "Settings",
+  "language": "Language",
+  "theme": "Theme",
+  "darkMode": "Dark Mode",
+  "lightMode": "Light Mode",
+  "systemDefault": "System Default",
+  "notifications": "Notifications",
+  "help": "Help & Support",
+  "aboutUs": "About Us",
+  "privacyPolicy": "Privacy Policy",
+  "termsOfService": "Terms of Service",
+  
+  "loading": "Loading...",
+  "retry": "Retry",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "back": "Back",
+  "next": "Next",
+  "done": "Done",
+  "close": "Close",
+  "yes": "Yes",
+  "no": "No",
+  "ok": "OK",
+  
+  "error": "Error",
+  "success": "Success",
+  "warning": "Warning",
+  "info": "Info",
+  "networkError": "Network error. Please check your connection.",
+  "somethingWentWrong": "Something went wrong. Please try again.",
+  "sessionExpired": "Session expired. Please login again.",
+  
+  "locationPermission": "Location Permission",
+  "locationPermissionMessage": "We need location permission to find jobs near you",
+  "allowLocation": "Allow Location",
+  "denyLocation": "Not Now",
+  
+  "microphonePermission": "Microphone Permission",
+  "microphonePermissionMessage": "We need microphone permission for voice search",
+  "allowMicrophone": "Allow Microphone",
+  
+  "rupeeSymbol": "\u20B9",
+  "currencyFormat": "\u20B9{amount}",
+  "@currencyFormat": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "distanceFormat": "{distance} km away",
+  "@distanceFormat": {
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  
+  "applicationsCount": "{count} applications",
+  "@applicationsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "workersNeeded": "{count} workers needed",
+  "@workersNeeded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

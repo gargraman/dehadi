@@ -1,19 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../config/app_theme.dart';
+import '../l10n/app_localizations.dart';
+import '../providers/locale_provider.dart';
+import '../providers/theme_provider.dart';
 import '../models/user.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
+import 'home_screen.dart';
+import 'search_screen.dart';
+import 'nearby_screen.dart';
+import 'messages_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  const ProfileScreen({super.key});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  int _selectedIndex = 4; // Index for profile in bottom navigation
-  User? user;
+  final int _selectedIndex = 4;
+  User? _user;
   bool _isLoading = true;
 
   @override
@@ -23,49 +32,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadUserProfile() async {
-    final fetchedUser = await ApiService.getCurrentUser();
-    if (mounted) {
-      setState(() {
-        user = fetchedUser;
-        _isLoading = false;
-      });
+    try {
+      final fetchedUser = await ApiService.getCurrentUser();
+      if (mounted) {
+        setState(() {
+          _user = fetchedUser;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    // Navigate to different screens based on index
+    if (index == _selectedIndex) return;
+    
+    Widget screen;
     switch (index) {
-      case 0: // Home
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
+      case 0:
+        screen = const HomeScreen();
         break;
-      case 1: // Search
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const SearchScreen()),
-        );
+      case 1:
+        screen = const SearchScreen();
         break;
-      case 2: // Nearby
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const NearbyScreen()),
-        );
+      case 2:
+        screen = const NearbyScreen();
         break;
-      case 3: // Messages
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MessagesScreen()),
-        );
+      case 3:
+        screen = const MessagesScreen();
         break;
-      case 4: // Profile (current)
-        break; // Already on this screen
+      case 4:
+        return;
+      default:
+        return;
     }
+    
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => screen,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 200),
+      ),
+    );
   }
 
   Future<void> _logout() async {
@@ -80,343 +94,505 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final localeProvider = Provider.of<LocaleProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isHindi = localeProvider.locale.languageCode == 'hi';
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text(isHindi ? 'प्रोफ़ाइल' : 'Profile'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: () {
-              // Handle notifications
-            },
-          ),
-          PopupMenuButton<String>(
-            onSelected: (String value) {
-              if (value == 'logout') {
-                _logout();
-              }
-            },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'settings',
-                child: Text('Settings'),
-              ),
-              const PopupMenuDivider(),
-              const PopupMenuItem<String>(
-                value: 'logout',
-                child: Text('Logout'),
-              ),
-            ],
+            icon: Icon(
+              themeProvider.isDarkMode 
+                  ? Icons.light_mode_rounded 
+                  : Icons.dark_mode_rounded,
+            ),
+            onPressed: () => themeProvider.toggleTheme(),
+            tooltip: isHindi ? 'थीम बदलें' : 'Toggle theme',
           ),
         ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : user == null
-              ? const Center(child: Text('User not found'))
-              : Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Profile picture
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.grey[300],
-                        child: Icon(
-                          Icons.person,
-                          size: 50,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      // User name
-                      Text(
-                        user!.fullName,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      
-                      // Phone number
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.phone, size: 16, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          Text(
-                            user!.phone,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey,
+          : _user == null
+              ? _buildErrorState(theme, isHindi)
+              : RefreshIndicator(
+                  onRefresh: _loadUserProfile,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(AppTheme.spacingMd),
+                    child: Column(
+                      children: [
+                        // Profile header
+                        _buildProfileHeader(theme, isHindi),
+                        
+                        const SizedBox(height: AppTheme.spacingLg),
+                        
+                        // Stats
+                        _buildStats(theme, isHindi),
+                        
+                        const SizedBox(height: AppTheme.spacingLg),
+                        
+                        // Skills
+                        if (_user!.role == 'worker') ...[
+                          _buildSkillsSection(theme, isHindi),
+                          const SizedBox(height: AppTheme.spacingLg),
+                        ],
+                        
+                        // Settings
+                        _buildSettingsSection(theme, isHindi),
+                        
+                        const SizedBox(height: AppTheme.spacingLg),
+                        
+                        // Logout
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _logout,
+                            icon: Icon(
+                              Icons.logout_rounded,
+                              color: theme.colorScheme.error,
+                            ),
+                            label: Text(
+                              isHindi ? 'लॉगआउट' : 'Logout',
+                              style: TextStyle(color: theme.colorScheme.error),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: theme.colorScheme.error),
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      
-                      // Location
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.location_on, size: 16, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          Text(
-                            user!.location ?? 'Location not set',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 30),
-                      
-                      // Earnings summary
-                      const Text(
-                        '💰 Earnings Summary',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildStatCard('12', 'Jobs Completed', Icons.work),
-                          _buildStatCard('₹7,200', 'Total Earned', Icons.money),
-                        ],
-                      ),
-                      const SizedBox(height: 30),
-                      
-                      // Skills section
-                      const Text(
-                        '🧰 Skills & Experience',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      if (user!.skills != null && user!.skills!.isNotEmpty)
-                        Wrap(
-                          spacing: 8.0,
-                          runSpacing: 8.0,
-                          children: user!.skills!.map((skill) {
-                            return Chip(
-                              label: Text(skill),
-                              backgroundColor: Colors.blue[100],
-                            );
-                          }).toList(),
-                        )
-                      else
-                        const Text(
-                          'No skills added',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Handle edit skills
-                        },
-                        child: const Text('Edit Skills'),
-                      ),
-                      const SizedBox(height: 30),
-                      
-                      // Recent activity
-                      const Text(
-                        '📋 Recent Activity',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: ListView(
-                          children: [
-                            _buildActivityItem(
-                              icon: Icons.work,
-                              title: 'Job completed: Painting',
-                              subtitle: '₹450 earned (2 days ago)',
-                              color: Colors.green,
-                            ),
-                            _buildActivityItem(
-                              icon: Icons.work,
-                              title: 'Job started: Construction',
-                              subtitle: 'On day 3 of 7-day job',
-                              color: Colors.blue,
-                            ),
-                            _buildActivityItem(
-                              icon: Icons.assignment,
-                              title: 'Applied to: Masonry',
-                              subtitle: 'Awaiting response',
-                              color: Colors.orange,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      
-                      // Quick actions
-                      const Text(
-                        '🛠️ Quick Actions',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        alignment: WrapAlignment.center,
-                        children: [
-                          _buildActionChip('Edit Profile', Icons.edit),
-                          _buildActionChip('Payment Info', Icons.payment),
-                          _buildActionChip('Language', Icons.language),
-                          _buildActionChip('Notifications', Icons.notifications),
-                        ],
-                      ),
-                      
-                      // Logout button
-                      const SizedBox(height: 20),
-                      OutlinedButton(
-                        onPressed: _logout,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red,
-                          side: const BorderSide(color: Colors.red),
-                        ),
-                        child: const Text('LOGOUT'),
-                      ),
-                    ],
+                        
+                        const SizedBox(height: AppTheme.spacingXl),
+                      ],
+                    ),
                   ),
                 ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.location_on),
-            label: 'Nearby',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat),
-            label: 'Messages',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blue,
-        onTap: _onItemTapped,
-      ),
+      bottomNavigationBar: _buildBottomNav(theme, isHindi),
     );
   }
 
-  Widget _buildStatCard(String value, String label, IconData icon) {
-    return Container(
-      width: MediaQuery.of(context).size.width / 2.5,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-      ),
+  Widget _buildErrorState(ThemeData theme, bool isHindi) {
+    return Center(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 28, color: Colors.blue),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+          Icon(
+            Icons.error_outline_rounded,
+            size: 64,
+            color: theme.colorScheme.onSurfaceVariant,
           ),
+          const SizedBox(height: AppTheme.spacingMd),
           Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
+            isHindi ? 'प्रोफ़ाइल लोड नहीं हो सकी' : 'Could not load profile',
+            style: theme.textTheme.titleMedium,
+          ),
+          const SizedBox(height: AppTheme.spacingMd),
+          ElevatedButton(
+            onPressed: _loadUserProfile,
+            child: Text(isHindi ? 'पुनः प्रयास करें' : 'Retry'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActivityItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-  }) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          children: [
-            Icon(icon, color: color),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      color: Colors.grey,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
+  Widget _buildProfileHeader(ThemeData theme, bool isHindi) {
+    return Column(
+      children: [
+        // Avatar
+        Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withOpacity(0.1),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: theme.colorScheme.primary,
+              width: 3,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              _user!.fullName.isNotEmpty 
+                  ? _user!.fullName[0].toUpperCase() 
+                  : '?',
+              style: theme.textTheme.headlineLarge?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.bold,
               ),
             ),
+          ),
+        ),
+        
+        const SizedBox(height: AppTheme.spacingMd),
+        
+        // Name
+        Text(
+          _user!.fullName,
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        
+        const SizedBox(height: AppTheme.spacingXs),
+        
+        // Role badge
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.spacingMd,
+            vertical: AppTheme.spacingXs,
+          ),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+          ),
+          child: Text(
+            _user!.role == 'worker' 
+                ? (isHindi ? 'कामगार' : 'Worker')
+                : (isHindi ? 'नियोक्ता' : 'Employer'),
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        
+        const SizedBox(height: AppTheme.spacingMd),
+        
+        // Contact info
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.phone_outlined,
+              size: 16,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              _user!.phone,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        
+        if (_user!.location != null) ...[
+          const SizedBox(height: AppTheme.spacingXs),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.location_on_outlined,
+                size: 16,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                _user!.location!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildStats(ThemeData theme, bool isHindi) {
+    return Row(
+      children: [
+        Expanded(
+          child: _StatCard(
+            icon: Icons.work_rounded,
+            value: '12',
+            label: isHindi ? 'पूर्ण नौकरियां' : 'Jobs Done',
+            color: AppTheme.primaryColor,
+          ),
+        ),
+        const SizedBox(width: AppTheme.spacingMd),
+        Expanded(
+          child: _StatCard(
+            icon: Icons.account_balance_wallet_rounded,
+            value: '\u20B97,200',
+            label: isHindi ? 'कुल कमाई' : 'Total Earned',
+            color: AppTheme.successColor,
+          ),
+        ),
+        const SizedBox(width: AppTheme.spacingMd),
+        Expanded(
+          child: _StatCard(
+            icon: Icons.star_rounded,
+            value: '4.5',
+            label: isHindi ? 'रेटिंग' : 'Rating',
+            color: AppTheme.accentColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSkillsSection(ThemeData theme, bool isHindi) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppTheme.spacingMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.handyman_rounded,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: AppTheme.spacingSm),
+                    Text(
+                      isHindi ? 'कौशल' : 'Skills',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                TextButton(
+                  onPressed: () {
+                    // Edit skills
+                  },
+                  child: Text(isHindi ? 'संपादित करें' : 'Edit'),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spacingSm),
+            if (_user!.skills != null && _user!.skills!.isNotEmpty)
+              Wrap(
+                spacing: AppTheme.spacingSm,
+                runSpacing: AppTheme.spacingSm,
+                children: _user!.skills!.map((skill) {
+                  final color = AppTheme.getCategoryColor(skill);
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacingMd,
+                      vertical: AppTheme.spacingSm,
+                    ),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+                      border: Border.all(color: color.withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      _getSkillLabel(skill, isHindi),
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: color,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  );
+                }).toList(),
+              )
+            else
+              Text(
+                isHindi ? 'कोई कौशल नहीं जोड़ा गया' : 'No skills added',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildActionChip(String label, IconData icon) {
-    return ChoiceChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
+  Widget _buildSettingsSection(ThemeData theme, bool isHindi) {
+    final localeProvider = Provider.of<LocaleProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    
+    return Card(
+      child: Column(
         children: [
-          Icon(icon, size: 16),
-          const SizedBox(width: 4),
-          Text(label),
+          _SettingsTile(
+            icon: Icons.language_rounded,
+            title: isHindi ? 'भाषा' : 'Language',
+            subtitle: isHindi ? 'हिंदी' : 'English',
+            onTap: () {
+              final newLocale = isHindi 
+                  ? const Locale('en') 
+                  : const Locale('hi');
+              localeProvider.setLocale(newLocale);
+            },
+          ),
+          const Divider(height: 1),
+          _SettingsTile(
+            icon: themeProvider.isDarkMode 
+                ? Icons.dark_mode_rounded 
+                : Icons.light_mode_rounded,
+            title: isHindi ? 'थीम' : 'Theme',
+            subtitle: themeProvider.isDarkMode 
+                ? (isHindi ? 'डार्क मोड' : 'Dark Mode')
+                : (isHindi ? 'लाइट मोड' : 'Light Mode'),
+            onTap: () => themeProvider.toggleTheme(),
+          ),
+          const Divider(height: 1),
+          _SettingsTile(
+            icon: Icons.notifications_outlined,
+            title: isHindi ? 'नोटिफ़िकेशन' : 'Notifications',
+            subtitle: isHindi ? 'सूचनाएं प्रबंधित करें' : 'Manage notifications',
+            onTap: () {},
+          ),
+          const Divider(height: 1),
+          _SettingsTile(
+            icon: Icons.help_outline_rounded,
+            title: isHindi ? 'मदद' : 'Help',
+            subtitle: isHindi ? 'सहायता केंद्र' : 'Support center',
+            onTap: () {},
+          ),
+          const Divider(height: 1),
+          _SettingsTile(
+            icon: Icons.info_outline_rounded,
+            title: isHindi ? 'हमारे बारे में' : 'About',
+            subtitle: 'HireConnect v1.0.0',
+            onTap: () {},
+          ),
         ],
       ),
-      selected: false,
-      onSelected: (selected) {
-        // Handle action
-      },
+    );
+  }
+
+  Widget _buildBottomNav(ThemeData theme, bool isHindi) {
+    return NavigationBar(
+      selectedIndex: _selectedIndex,
+      onDestinationSelected: _onItemTapped,
+      destinations: [
+        NavigationDestination(
+          icon: const Icon(Icons.home_outlined),
+          selectedIcon: const Icon(Icons.home_rounded),
+          label: isHindi ? 'होम' : 'Home',
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.search_outlined),
+          selectedIcon: const Icon(Icons.search_rounded),
+          label: isHindi ? 'खोजें' : 'Search',
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.location_on_outlined),
+          selectedIcon: const Icon(Icons.location_on_rounded),
+          label: isHindi ? 'आस-पास' : 'Nearby',
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.chat_bubble_outline_rounded),
+          selectedIcon: const Icon(Icons.chat_bubble_rounded),
+          label: isHindi ? 'संदेश' : 'Messages',
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.person_outline_rounded),
+          selectedIcon: const Icon(Icons.person_rounded),
+          label: isHindi ? 'प्रोफ़ाइल' : 'Profile',
+        ),
+      ],
+    );
+  }
+
+  String _getSkillLabel(String skill, bool isHindi) {
+    final labels = {
+      'mason': isHindi ? 'राजमिस्त्री' : 'Mason',
+      'electrician': isHindi ? 'इलेक्ट्रीशियन' : 'Electrician',
+      'plumber': isHindi ? 'प्लंबर' : 'Plumber',
+      'carpenter': isHindi ? 'बढ़ई' : 'Carpenter',
+      'painter': isHindi ? 'पेंटर' : 'Painter',
+      'cleaner': isHindi ? 'सफाईकर्मी' : 'Cleaner',
+      'driver': isHindi ? 'ड्राइवर' : 'Driver',
+      'helper': isHindi ? 'हेल्पर' : 'Helper',
+      'cook': isHindi ? 'रसोइया' : 'Cook',
+      'welder': isHindi ? 'वेल्डर' : 'Welder',
+    };
+    return labels[skill.toLowerCase()] ?? skill;
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+
+  const _StatCard({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.spacingMd),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: AppTheme.iconSizeMd),
+          const SizedBox(height: AppTheme.spacingSm),
+          Text(
+            value,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 }
 
-// Import needed for the ProfileScreen to navigate to other screens
-import 'home_screen.dart';
-import 'search_screen.dart';
-import 'nearby_screen.dart';
-import 'messages_screen.dart';
+class _SettingsTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _SettingsTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return ListTile(
+      leading: Icon(icon, color: theme.colorScheme.onSurfaceVariant),
+      title: Text(title),
+      subtitle: Text(
+        subtitle,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      trailing: const Icon(Icons.chevron_right_rounded),
+      onTap: onTap,
+    );
+  }
+}

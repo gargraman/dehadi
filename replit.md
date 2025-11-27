@@ -1,373 +1,67 @@
 # Dehadi.co.in - Worker Marketplace Platform
 
 ## Overview
-
-Dehadi.co.in is a worker marketplace platform designed to connect daily-wage and skilled workers with employers across India. The platform focuses on accessibility for low-literacy users, multilingual support, and mobile-first design optimized for outdoor visibility and smartphone users with limited experience.
-
-The application serves multiple user roles:
-- **Workers**: Find jobs, view opportunities nearby, manage applications
-- **Employers**: Post jobs, hire workers, manage projects
-- **NGO/CSC Partners**: Assist with worker registration
-- **Admins**: Platform management and oversight
+Dehadi.co.in is a worker marketplace platform connecting daily-wage and skilled workers with employers across India. It emphasizes accessibility for low-literacy users, multilingual support, and a mobile-first design optimized for outdoor visibility and users with limited smartphone experience. The platform supports multiple user roles: Workers, Employers, NGO/CSC Partners, and Admins. The business vision is to empower the unorganized labor sector in India by providing a streamlined, accessible job market.
 
 ## User Preferences
-
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend Architecture
+### UI/UX Decisions
+The platform features a mobile-first responsive design with a bottom navigation pattern. It uses a high-contrast color palette optimized for outdoor visibility and large touch targets (minimum 44x44px for web, 48dp for Flutter) to accommodate users with limited smartphone experience. A progressive enhancement approach is used, including an onboarding flow. Accessibility features include icon + text labels, visual job categories, ARIA labels, semantic HTML, keyboard navigation, and high contrast modes. Internationalization supports English, Hindi, Bengali, Telugu, Tamil, Marathi, Gujarati, Kannada, Malayalam, and Punjabi, with dynamic font loading. The Flutter mobile app mirrors these UI/UX principles, adding voice search capabilities.
 
-**Framework & Build System**
-- **React 18** with TypeScript for type safety
-- **Vite** as the build tool and development server
-- **Wouter** for lightweight client-side routing
-- **TanStack Query** for server state management and data fetching
+### Technical Implementations
 
-**UI Framework & Design System**
-- **Shadcn/ui** components built on Radix UI primitives
-- **Material UI Icons** for iconography
-- **Tailwind CSS** for styling with custom design tokens
-- **Material Design 3** principles heavily customized for accessibility
+**Frontend (Web):**
+- **Framework:** React 18 with TypeScript.
+- **Build System:** Vite.
+- **Routing:** Wouter.
+- **State Management:** TanStack Query for server state, React hooks/Context API for client state, LocalStorage for persistence.
+- **UI:** Shadcn/ui (built on Radix UI), Material UI Icons, Tailwind CSS, Material Design 3 principles.
 
-**Key Design Decisions**
-- Mobile-first responsive design with bottom navigation pattern
-- High contrast color palette optimized for outdoor visibility
-- Large touch targets (minimum 44x44px) for users with limited smartphone experience
-- Progressive enhancement approach with onboarding flow
-- Offline-first considerations through localStorage for critical data
+**Frontend (Mobile - Flutter):**
+- **Framework:** Flutter with Dart.
+- **State Management:** Provider.
+- **UI:** Material Design 3 theme, high-contrast colors, custom fonts (Inter, NotoSansDevanagari).
+- **Internationalization:** `AppLocalizations` class, `LocaleProvider` for runtime switching.
+- **Voice Search:** `speech_to_text` package for locale-aware voice input.
 
-### Backend Architecture
+**Backend:**
+- **Framework:** Express.js with TypeScript on Node.js, RESTful API.
+- **Data Layer:** Drizzle ORM, Neon Serverless PostgreSQL.
+- **Storage:** Database persistence via `DatabaseStorage`.
+- **Authentication:** Currently LocalStorage-based, future plans for JWT and RBAC.
 
-**Server Framework**
-- **Express.js** with TypeScript running on Node.js
-- RESTful API architecture with `/api` prefix for all endpoints
-- Custom middleware for request logging and error handling
-- Development mode integrates Vite middleware for HMR
+**Payment Integration & Job Lifecycle:**
+- **Payment Gateway:** Razorpay integration for UPI and online payments.
+- **Job Statuses:** `open`, `in_progress`, `awaiting_payment`, `paid`, `completed`, `cancelled`.
+- Features include visual status indicators, real-time updates, worker assignment tracking, and payment history.
 
-**Data Layer**
-- **Drizzle ORM** for type-safe database operations
-- **Neon Serverless PostgreSQL** as the database (via `@neondatabase/serverless`)
-- WebSocket-based connection pooling for serverless compatibility
-- Schema-first approach with Zod validation
-
-**Storage Strategy**
-- Database persistence using `DatabaseStorage` with Drizzle ORM
-- Interface-based storage layer (`IStorage`) enabling easy storage swapping
-- PostgreSQL database for production-ready data persistence
-- Legacy `MemStorage` implementation available for testing
-
-### State Management
-
-**Client State**
-- React hooks for local component state
-- Context API for theme and user preferences
-- LocalStorage for onboarding data and user preferences
-
-**Server State**
-- TanStack Query for caching, synchronization, and background updates
-- Custom query functions with 401 handling
-- Infinite stale time with manual invalidation strategy
-
-### Routing & Navigation
-
-**Client-Side Routing**
-- Wouter for declarative routing
-- Protected route wrapper checking onboarding completion
-- Bottom navigation for primary app sections (Home, Search, Nearby, Messages, Profile)
-
-**Route Structure**
-- `/onboarding` - Initial user setup and language selection
-- `/` - Home feed with job listings
-- `/search` - Advanced search with filters
-- `/nearby` - Location-based job discovery
-- `/messages` - Communication hub
-- `/profile` - User profile and settings
-- `/dashboard` - Admin analytics (role-based)
-- `/jobs/:id` - Job details and application
-- `/jobs/:id/payment` - Payment interface for completed jobs
-- `/post-job` - Job posting form for employers
-
-### Authentication & Authorization
-
-**Current Implementation**
-- LocalStorage-based onboarding state
-- Role-based UI rendering (worker, employer, NGO, admin)
-- Planned integration with proper authentication system
-
-**Future Considerations**
-- JWT-based authentication
-- Role-based access control (RBAC)
-- OAuth integration for social login
-
-### Payment Integration & Job Lifecycle
-
-**Payment Gateway**
-- **Razorpay** integration for UPI and online payments
-- Secure payment verification using HMAC SHA256 signatures
-- Payment order creation and verification endpoints
-- Support for multiple payment methods (UPI, cards, net banking)
-- Automatic job status updates after successful payment
-
-**Job Status Lifecycle**
-- **open**: Job posted and accepting applications
-- **in_progress**: Worker assigned and job started
-- **awaiting_payment**: Job completed, pending employer payment
-- **paid**: Payment completed successfully
-- **completed**: Job fully finished
-- **cancelled**: Job cancelled by employer
-
-**Status Tracking Features**
-- Visual status indicators on job cards with distinct icons
-- Real-time status updates across the application
-- Worker assignment tracking with assignedWorkerId field
-- Timestamp tracking for startedAt and completedAt
-- Payment history and transaction records
-
-**API Endpoints**
-- `POST /api/payments/create-order` - Initialize Razorpay payment
-- `POST /api/payments/verify` - Verify payment signature
-- `GET /api/payments/job/:jobId` - Get payment details for a job
-- `POST /api/jobs/:id/assign` - Assign worker to job
-- `POST /api/jobs/:id/complete` - Mark job as completed
-- `PATCH /api/jobs/:id/status` - Update job status
-
-**Database Schema**
-- `payments` table with Razorpay order/payment tracking
-- Enhanced `jobs` table with lifecycle fields
-- Foreign key relationships for data integrity
-
-**Future Enhancements**
-- Ratings and comments for completed jobs
-- Dispute resolution system
-- Payment refunds and reversals
-- Worker performance metrics
-
-### Internationalization (i18n)
-
-**Language Support**
-- Multi-script support: English, Hindi, Bengali, Telugu, Tamil, Marathi, Gujarati, Kannada, Malayalam, Punjabi
-- Google Fonts integration: Inter (primary), Noto Sans variants (regional)
-- Language switcher component with native script display
-- Planned implementation: Dynamic font loading based on selected language
-
-### Accessibility Features
-
-**Design for Low-Literacy Users**
-- Icon + text labels for all primary actions
-- Visual job categories with representative images
-- Voice search capability (planned)
-- Simplified onboarding flow with step-by-step guidance
-
-**Technical Accessibility**
-- ARIA labels and semantic HTML
-- Keyboard navigation support via Radix UI
-- High contrast modes (light/dark theme)
-- Large minimum font sizes (16px base)
+### System Design Choices
+- **Modular Architecture:** Clear separation of concerns between frontend, backend, and mobile components.
+- **Scalability:** Designed for horizontal scaling with AWS ECS Fargate, RDS read replicas, and CDN caching.
+- **Security:** Emphasis on environment variables for sensitive data, SSL/TLS, and planned RBAC.
+- **Observability:** Health checks, centralized logging (CloudWatch), metrics, and alerts.
 
 ## External Dependencies
 
 ### Third-Party Services
-
-**Database**
-- **Neon Serverless PostgreSQL** - Primary database
-- Connection via `@neondatabase/serverless` package
-- WebSocket-based connection pooling
-
-**Payment Gateway**
-- **Razorpay** - Payment processing for UPI, cards, and net banking
-- Supports multiple Indian payment methods
-- Environment variables: `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`
-
-**Fonts & Assets**
-- **Google Fonts API** - Inter and Noto Sans font families
-- **Material Icons** - Icon library via Google Fonts CDN
+- **Database:** Neon Serverless PostgreSQL (`@neondatabase/serverless`).
+- **Payment Gateway:** Razorpay.
+- **Fonts & Assets:** Google Fonts API (Inter, Noto Sans), Material Icons.
 
 ### UI Component Libraries
+- **Web:** Radix UI, Shadcn/ui, `@mui/icons-material`, Tailwind CSS, `class-variance-authority`, `clsx`, `tailwind-merge`.
+- **Flutter:** `speech_to_text` (for voice search).
 
-**Core UI Framework**
-- **Radix UI** - Unstyled, accessible component primitives (20+ components)
-- **Shadcn/ui** - Pre-styled components built on Radix
-- **Material UI** - Icons package only (`@mui/icons-material`)
+### Development & Utilities
+- **Build & Dev Tools:** Vite, TypeScript, ESBuild, PostCSS.
+- **Form & Validation:** React Hook Form, Zod, `@hookform/resolvers`, Drizzle-Zod.
+- **Utilities:** `date-fns`, `nanoid`, `ws`.
+- **API & Data Fetching:** TanStack Query, native Fetch API.
 
-**Styling & Utilities**
-- **Tailwind CSS** - Utility-first CSS framework
-- **class-variance-authority** - Component variant management
-- **clsx** & **tailwind-merge** - Conditional class composition
-
-### Development Tools
-
-**Build & Dev Tools**
-- **Vite** - Build tool and dev server
-- **TypeScript** - Type checking
-- **ESBuild** - Server-side bundling
-- **PostCSS** with Autoprefixer
-
-**Replit Integration**
-- `@replit/vite-plugin-runtime-error-modal` - Error overlay
-- `@replit/vite-plugin-cartographer` - Development tooling
-- `@replit/vite-plugin-dev-banner` - Dev environment banner
-
-### Form & Validation
-
-- **React Hook Form** - Form state management
-- **Zod** - Schema validation
-- **@hookform/resolvers** - Zod integration with RHF
-- **Drizzle-Zod** - Database schema to Zod conversion
-
-### Utilities
-
-- **date-fns** - Date formatting and manipulation
-- **nanoid** - Unique ID generation
-- **ws** - WebSocket client for Neon connection
-
-### API & Data Fetching
-
-- **TanStack Query** (React Query) - Server state management
-- Native Fetch API for HTTP requests
-- Custom `apiRequest` wrapper with error handling
-
-## Deployment
-
-### Deployment Options
-
-The application supports multiple deployment strategies:
-
-1. **Replit Deployment** (Native)
-   - One-click deployment within Replit platform
-   - Automatic environment configuration
-   - Built-in database and object storage
-   - Access via `.replit.app` domain or custom domain
-
-2. **Docker Deployment**
-   - Containerized application for portability
-   - Multi-stage build for optimized image size
-   - Docker Compose for local development with PostgreSQL
-   - Compatible with any Docker-capable hosting platform
-
-3. **Cloud Deployment (AWS)**
-   - AWS ECS Fargate for serverless containers
-   - AWS RDS PostgreSQL for managed database
-   - Application Load Balancer for high availability
-   - Auto-scaling based on traffic
-   - Alternative options: Elastic Beanstalk, EC2
-
-### Deployment Files
-
-**Core Files:**
-- `Dockerfile` - Multi-stage build for production deployment
-- `docker-compose.yml` - Local development environment with PostgreSQL
-- `.dockerignore` - Optimizes Docker build performance
-- `.env.example` - Template for environment variables
-- `init-db.sql` - Database initialization script
-
-**CI/CD:**
-- `.github/workflows/deploy-aws.yml` - GitHub Actions pipeline for AWS ECS
-- Automated build, test, and deployment workflow
-- Vulnerability scanning with Trivy
-- Automatic rollback on deployment failure
-
-**Documentation:**
-- `README-DEPLOY.md` - Comprehensive deployment guide
-  - Local development setup
-  - Docker deployment instructions
-  - AWS deployment (ECS, Elastic Beanstalk, EC2)
-  - Environment configuration
-  - Database migrations
-  - Troubleshooting guide
-
-### Environment Variables
-
-**Required for Production:**
-- `DATABASE_URL` - PostgreSQL connection string
-- `RAZORPAY_KEY_ID` - Payment gateway API key
-- `RAZORPAY_KEY_SECRET` - Payment gateway secret
-- `SESSION_SECRET` - Express session encryption key
-- `NODE_ENV` - Set to "production"
-
-**Optional:**
-- `OPENAI_API_KEY` - AI features
-- `DEFAULT_OBJECT_STORAGE_BUCKET_ID` - S3/Object storage
-- `AWS_*` - AWS service credentials
-
-### Health Check Endpoint
-
-`GET /api/health` - Returns application and database health status
-- Used by load balancers and monitoring systems
-- Validates database connectivity
-- Returns HTTP 200 for healthy, 503 for unhealthy
-
-### Local Development
-
-```bash
-# With Docker Compose
-docker-compose up -d
-
-# Without Docker
-npm install
-npm run db:push
-npm run dev
-```
-
-### Production Deployment
-
-```bash
-# Docker
-docker build -t dehadi-app:latest .
-docker run -p 5000:5000 --env-file .env.production dehadi-app:latest
-
-# AWS ECS (via GitHub Actions)
-git push origin main  # Triggers automatic deployment
-```
-
-### Database Migrations
-
-Using Drizzle ORM:
-```bash
-# Push schema to database
-npm run db:push
-
-# Force push (if needed)
-npm run db:push --force
-```
-
-### Security Considerations
-
-- All sensitive data stored in environment variables
-- AWS Secrets Manager for production secrets
-- SSL/TLS required for production deployments
-- Regular security updates and vulnerability scanning
-- Rate limiting and DDoS protection recommended
-- Database encryption at rest and in transit
-
-### Scaling Strategy
-
-- **Horizontal scaling**: Multiple ECS tasks behind load balancer
-- **Database scaling**: RDS read replicas for read-heavy workloads
-- **Caching**: CloudFront CDN for static assets
-- **Auto-scaling**: Based on CPU/memory metrics
-
-### Cost Optimization
-
-- Use Fargate Spot for non-critical tasks (~70% savings)
-- RDS Reserved Instances for production database (~40% savings)
-- S3 Intelligent-Tiering for object storage
-- CloudWatch log retention policies
-- Auto-scaling to minimize idle resources
-
-### Monitoring & Observability
-
-- **Health checks**: Application and database connectivity
-- **Logs**: CloudWatch Logs (AWS) or container logs (Docker)
-- **Metrics**: CPU, memory, request count, response times
-- **Alerts**: High CPU, failed health checks, error rates
-- **Tracing**: Support for distributed tracing (AWS X-Ray)
-
-## Recent Changes
-
-### Payment System Enhancement (January 2025)
-- Implemented atomic database transactions for payment completion
-- Added comprehensive job lifecycle validations
-- Fixed critical payment verification security vulnerability
-- Enhanced error handling with detailed server messages
-- Added health check endpoint for deployment monitoring
+### Replit Specific
+- `@replit/vite-plugin-runtime-error-modal`
+- `@replit/vite-plugin-cartographer`
+- `@replit/vite-plugin-dev-banner`
