@@ -9,7 +9,7 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### UI/UX Decisions
-The platform features a mobile-first responsive design with a bottom navigation pattern. It uses a high-contrast color palette optimized for outdoor visibility and large touch targets (minimum 44x44px for web, 48dp for Flutter) to accommodate users with limited smartphone experience. A progressive enhancement approach is used, including an onboarding flow. Accessibility features include icon + text labels, visual job categories, ARIA labels, semantic HTML, keyboard navigation, and high contrast modes. Internationalization supports English, Hindi, Bengali, Telugu, Tamil, Marathi, Gujarati, Kannada, Malayalam, and Punjabi, with dynamic font loading. The Flutter mobile app mirrors these UI/UX principles, adding voice search capabilities.
+The platform features a mobile-first responsive design with a bottom navigation pattern. It uses a high-contrast color palette optimized for outdoor visibility and large touch targets (minimum 44x44px for web, 48dp for Flutter) to accommodate users with limited smartphone experience. A progressive enhancement approach is used, including an onboarding flow. All UI icons use lucide-react for a clean, professional appearance - no emojis are used in the interface. Accessibility features include icon + text labels with bilingual Hindi/English text, visual job categories with color-coded work type icons, ARIA labels, semantic HTML, keyboard navigation, and high contrast modes. Internationalization supports English, Hindi, Bengali, Telugu, Tamil, Marathi, Gujarati, Kannada, Malayalam, and Punjabi, with dynamic font loading. The Flutter mobile app mirrors these UI/UX principles, adding voice search capabilities.
 
 ### Technical Implementations
 
@@ -52,7 +52,7 @@ The platform features a mobile-first responsive design with a bottom navigation 
 - **Fonts & Assets:** Google Fonts API (Inter, Noto Sans), Material Icons.
 
 ### UI Component Libraries
-- **Web:** Radix UI, Shadcn/ui, `@mui/icons-material`, Tailwind CSS, `class-variance-authority`, `clsx`, `tailwind-merge`.
+- **Web:** Radix UI, Shadcn/ui, lucide-react (icons), Tailwind CSS, `class-variance-authority`, `clsx`, `tailwind-merge`.
 - **Flutter:** `speech_to_text` (for voice search).
 
 ### Development & Utilities
