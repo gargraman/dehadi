@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Eye, EyeOff, Smartphone, Lock, LogIn, UserPlus, Sparkles } from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface LoginResponse {
   user: {
@@ -29,8 +29,12 @@ export default function Login() {
       const res = await apiRequest('POST', '/api/auth/login', data);
       return res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log('Login successful:', data);
+      // Invalidate and refetch the auth query to update authentication state
+      // Use refetchQueries to actually wait for the data to be fetched
+      await queryClient.refetchQueries({ queryKey: ['/api/auth/me'] });
+      
       if (data.user.role === 'employer') {
         setLocation('/dashboard');
       } else {

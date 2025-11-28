@@ -53,10 +53,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logoutMutation.mutate();
   };
 
+  // Ensure user is properly typed - if it's an empty object from 401, treat as null
+  const validUser = user && typeof user === 'object' && 'id' in user ? user as User : null;
+  
   const value: AuthContextType = {
-    user: user || null,
+    user: validUser,
     isLoading,
-    isAuthenticated: !!user,
+    isAuthenticated: !!validUser,
     logout,
     refetchUser
   };

@@ -45,6 +45,7 @@ app.use(session({
   cookie: {
     secure: process.env.NODE_ENV === 'production', // HTTPS only in production
     httpOnly: true,
+    sameSite: 'lax', // Required for cross-origin requests in Replit proxy environment
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
