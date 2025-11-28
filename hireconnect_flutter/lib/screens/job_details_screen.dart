@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../models/job.dart';
 import '../services/api_service.dart';
 
@@ -33,9 +34,11 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Job Details'),
+        title: Text(l10n?.jobDetails ?? 'Job Details'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -48,19 +51,21 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
             onPressed: () {
               // Handle profile
             },
+            tooltip: l10n?.profile ?? 'Profile',
           ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
               // Handle settings
             },
+            tooltip: l10n?.settings ?? 'Settings',
           ),
         ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : job == null
-              ? const Center(child: Text('Job not found'))
+              ? Center(child: Text(l10n?.noJobsFound ?? 'Job not found'))
               : Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: SingleChildScrollView(

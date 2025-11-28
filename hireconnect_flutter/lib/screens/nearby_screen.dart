@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../widgets/job_card.dart';
 import '../models/job.dart';
 import '../services/api_service.dart';
@@ -81,15 +82,18 @@ class _NearbyScreenState extends State<NearbyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Nearby Jobs'),
+        title: Text(l10n?.nearbyJobs ?? 'Nearby Jobs'),
         actions: [
           IconButton(
             icon: const Icon(Icons.location_on),
             onPressed: () {
               // Handle location refresh
             },
+            tooltip: l10n?.refreshLocation ?? 'Refresh Location',
           ),
           PopupMenuButton<String>(
             onSelected: (String value) {
@@ -98,18 +102,18 @@ class _NearbyScreenState extends State<NearbyScreen> {
               }
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'profile',
-                child: Text('Profile'),
+                child: Text(l10n?.profile ?? 'Profile'),
               ),
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'settings',
-                child: Text('Settings'),
+                child: Text(l10n?.settings ?? 'Settings'),
               ),
               const PopupMenuDivider(),
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'logout',
-                child: Text('Logout'),
+                child: Text(l10n?.logout ?? 'Logout'),
               ),
             ],
           ),
@@ -151,9 +155,9 @@ class _NearbyScreenState extends State<NearbyScreen> {
             const SizedBox(height: 20),
             
             // Radius selection
-            const Text(
-              'Select Search Radius',
-              style: TextStyle(
+            Text(
+              l10n?.searchRadius ?? 'Select Search Radius',
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -182,9 +186,9 @@ class _NearbyScreenState extends State<NearbyScreen> {
               children: [
                 Icon(Icons.work, size: 22, color: Theme.of(context).colorScheme.primary),
                 const SizedBox(width: 8),
-                const Text(
-                  'Nearby Jobs',
-                  style: TextStyle(
+                Text(
+                  l10n?.nearbyJobs ?? 'Nearby Jobs',
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -196,7 +200,7 @@ class _NearbyScreenState extends State<NearbyScreen> {
             // Jobs list
             Expanded(
               child: jobs.isEmpty
-                  ? const Center(child: Text('No nearby jobs found'))
+                  ? Center(child: Text(l10n?.noJobsFound ?? 'No nearby jobs found'))
                   : ListView.builder(
                       itemCount: jobs.length,
                       itemBuilder: (context, index) {
@@ -214,8 +218,8 @@ class _NearbyScreenState extends State<NearbyScreen> {
                           onApply: () {
                             // Handle job application
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Applied to job successfully!'),
+                              SnackBar(
+                                content: Text(l10n?.appliedSuccessfully ?? 'Applied to job successfully!'),
                               ),
                             );
                           },
