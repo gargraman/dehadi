@@ -3,6 +3,8 @@ import '../widgets/job_card.dart';
 import '../models/job.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../l10n/app_localizations.dart';
+import '../config/app_theme.dart';
 import 'job_details_screen.dart';
 import 'post_job_screen.dart';
 import 'login_screen.dart';
@@ -86,7 +88,13 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('🏢 Employer Hub'),
+        title: Row(
+          children: [
+            Icon(Icons.business, size: AppTheme.iconSizeMd),
+            const SizedBox(width: AppTheme.spacingSm),
+            Text(AppLocalizations.of(context)?.employerHub ?? 'Employer Hub'),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.chat),
@@ -119,12 +127,18 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '👋 Hi, Employer Name',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              children: [
+                Icon(Icons.waving_hand, size: AppTheme.iconSizeMd, color: AppTheme.accentColor),
+                const SizedBox(width: AppTheme.spacingSm),
+                Text(
+                  '${AppLocalizations.of(context)?.hi ?? 'Hi'}, Employer',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             Text(
@@ -136,13 +150,18 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
             ),
             const SizedBox(height: 20),
             
-            // Quick stats
-            const Text(
-              '📊 Quick Stats',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              children: [
+                Icon(Icons.bar_chart, size: AppTheme.iconSizeMd, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: AppTheme.spacingSm),
+                const Text(
+                  'Quick Stats',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             Row(
@@ -162,13 +181,18 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
             ),
             const SizedBox(height: 20),
             
-            // Your active jobs
-            const Text(
-              '📍 Your Active Jobs',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              children: [
+                Icon(Icons.work, size: AppTheme.iconSizeMd, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: AppTheme.spacingSm),
+                Text(
+                  AppLocalizations.of(context)?.activeJobs ?? 'Active Jobs',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             
@@ -221,21 +245,33 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
                                     ),
                                     if (job.status != 'open') ...[
                                       const SizedBox(height: 4),
-                                      Text(
-                                        '👷 Assigned: Worker Name',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey,
-                                        ),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.person, size: 16, color: Colors.grey),
+                                          const SizedBox(width: 4),
+                                          const Text(
+                                            'Assigned: Worker Name',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ] else ...[
                                       const SizedBox(height: 4),
-                                      Text(
-                                        '📋 ${_getApplicationCount(job.id)} applications',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey,
-                                        ),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.assignment, size: 16, color: Colors.grey),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '${_getApplicationCount(job.id)} ${AppLocalizations.of(context)?.applications ?? 'applications'}',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                     const SizedBox(height: 12),
@@ -384,7 +420,13 @@ class _EmployerApplicationsScreenState extends State<EmployerApplicationsScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('📋 Applications'),
+        title: Row(
+          children: [
+            const Icon(Icons.assignment, size: 24),
+            const SizedBox(width: 8),
+            Text(AppLocalizations.of(context)?.applications ?? 'Applications'),
+          ],
+        ),
         actions: [
           PopupMenuButton<String>(
             onSelected: (String value) {
@@ -422,12 +464,18 @@ class _EmployerApplicationsScreenState extends State<EmployerApplicationsScreen>
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      '🏗️ Mason Work - ₹500/day',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.construction, size: 20, color: Theme.of(context).colorScheme.primary),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Mason Work - Rs. 500/day',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const Icon(Icons.arrow_drop_down),
@@ -445,13 +493,18 @@ class _EmployerApplicationsScreenState extends State<EmployerApplicationsScreen>
             ),
             const SizedBox(height: 20),
             
-            // Applications list
-            const Text(
-              '📋 Applications',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              children: [
+                Icon(Icons.assignment, size: 20, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  AppLocalizations.of(context)?.applications ?? 'Applications',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             

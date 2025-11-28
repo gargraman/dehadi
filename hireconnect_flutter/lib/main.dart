@@ -11,6 +11,7 @@ import 'providers/locale_provider.dart';
 import 'providers/theme_provider.dart';
 import 'services/auth_service.dart';
 import 'screens/language_selection_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/employer_dashboard_screen.dart';
@@ -18,13 +19,11 @@ import 'screens/employer_dashboard_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
   
-  // Log API configuration on app start
   ApiConfig.logConfig();
   
   runApp(
@@ -45,19 +44,16 @@ class HireConnectApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer2<LocaleProvider, ThemeProvider>(
       builder: (context, localeProvider, themeProvider, child) {
-        // Get font family based on locale
         final fontFamily = localeProvider.getFontFamily();
         
         return MaterialApp(
           title: 'HireConnect',
           debugShowCheckedModeBanner: false,
           
-          // Theme configuration
           theme: AppTheme.lightTheme(fontFamily: fontFamily),
           darkTheme: AppTheme.darkTheme(fontFamily: fontFamily),
           themeMode: themeProvider.themeMode,
           
-          // Localization
           locale: localeProvider.locale,
           supportedLocales: LocaleProvider.supportedLocales,
           localizationsDelegates: const [
@@ -67,12 +63,18 @@ class HireConnectApp extends StatelessWidget {
             GlobalCupertinoLocalizations.delegate,
           ],
           
-          // App entry point
           home: const AppEntryPoint(),
         );
       },
     );
   }
+}
+
+enum AppFlowStep {
+  loading,
+  languageSelection,
+  onboarding,
+  authWrapper,
 }
 
 class AppEntryPoint extends StatefulWidget {
@@ -83,50 +85,67 @@ class AppEntryPoint extends StatefulWidget {
 }
 
 class _AppEntryPointState extends State<AppEntryPoint> {
-  bool _isLoading = true;
-  bool _showLanguageSelection = false;
+  AppFlowStep _currentStep = AppFlowStep.loading;
   
   @override
   void initState() {
     super.initState();
-    _checkFirstTimeUser();
+    _determineInitialStep();
   }
   
-  Future<void> _checkFirstTimeUser() async {
+  Future<void> _determineInitialStep() async {
     final prefs = await SharedPreferences.getInstance();
     final hasSelectedLanguage = prefs.containsKey('app_locale');
+    final hasCompletedOnboarding = prefs.getBool('onboarding_complete') ?? false;
     
     if (mounted) {
       setState(() {
-        _showLanguageSelection = !hasSelectedLanguage;
-        _isLoading = false;
+        if (!hasSelectedLanguage) {
+          _currentStep = AppFlowStep.languageSelection;
+        } else if (!hasCompletedOnboarding) {
+          _currentStep = AppFlowStep.onboarding;
+        } else {
+          _currentStep = AppFlowStep.authWrapper;
+        }
       });
     }
   }
   
   void _onLanguageSelected() {
     setState(() {
-      _showLanguageSelection = false;
+      _currentStep = AppFlowStep.onboarding;
+    });
+  }
+  
+  void _onOnboardingComplete() {
+    setState(() {
+      _currentStep = AppFlowStep.authWrapper;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+    switch (_currentStep) {
+      case AppFlowStep.loading:
+        return const Scaffold(
+          body: Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+      
+      case AppFlowStep.languageSelection:
+        return LanguageSelectionScreen(
+          onLanguageSelected: _onLanguageSelected,
+        );
+      
+      case AppFlowStep.onboarding:
+        return OnboardingScreen(
+          onComplete: _onOnboardingComplete,
+        );
+      
+      case AppFlowStep.authWrapper:
+        return const AuthWrapper();
     }
-    
-    if (_showLanguageSelection) {
-      return LanguageSelectionScreen(
-        onLanguageSelected: _onLanguageSelected,
-      );
-    }
-    
-    return const AuthWrapper();
   }
 }
 
@@ -181,7 +200,6 @@ class HomeOrEmployerWrapper extends StatefulWidget {
 class _HomeOrEmployerWrapperState extends State<HomeOrEmployerWrapper> {
   @override
   Widget build(BuildContext context) {
-    // Get the user from auth service to determine which screen to show
     return FutureBuilder(
       future: AuthService.getCurrentUser(),
       builder: (context, snapshot) {
@@ -195,7 +213,6 @@ class _HomeOrEmployerWrapperState extends State<HomeOrEmployerWrapper> {
 
         final user = snapshot.data;
         if (user == null) {
-          // If somehow we get here without a user, redirect to login
           return const LoginScreen();
         }
 

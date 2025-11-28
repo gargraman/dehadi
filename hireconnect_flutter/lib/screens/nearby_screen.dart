@@ -178,13 +178,18 @@ class _NearbyScreenState extends State<NearbyScreen> {
             ),
             const SizedBox(height: 24),
             
-            // Jobs title
-            const Text(
-              '💼 Nearby Jobs',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              children: [
+                Icon(Icons.work, size: 22, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 8),
+                const Text(
+                  'Nearby Jobs',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             

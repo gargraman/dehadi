@@ -145,13 +145,18 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                         ),
                         const SizedBox(height: 24),
                         
-                        // Description section
-                        const Text(
-                          '📝 Description',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          children: [
+                            Icon(Icons.description, size: 22, color: Theme.of(context).colorScheme.primary),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Description',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -162,12 +167,18 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                         
                         // Required skills section
                         if (job!.skills != null && job!.skills!.isNotEmpty) ...[
-                          const Text(
-                            '🧰 Required Skills',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Row(
+                            children: [
+                              Icon(Icons.handyman, size: 22, color: Theme.of(context).colorScheme.primary),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Required Skills',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 8),
                           ...job!.skills!.map(
@@ -185,13 +196,18 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                         ],
                         const SizedBox(height: 24),
                         
-                        // Work details section
-                        const Text(
-                          '🕐 Work Details',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          children: [
+                            Icon(Icons.schedule, size: 22, color: Theme.of(context).colorScheme.primary),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Work Details',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 8),
                         const Text('• Duration: 2 weeks', style: TextStyle(fontSize: 16)),
@@ -199,13 +215,18 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                         const Text('• Start date: Immediate', style: TextStyle(fontSize: 16)),
                         const SizedBox(height: 24),
                         
-                        // Employer section
-                        const Text(
-                          '👨‍💼 Employer',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          children: [
+                            Icon(Icons.business_center, size: 22, color: Theme.of(context).colorScheme.primary),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Employer',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 8),
                         Container(
@@ -217,12 +238,18 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                '🏢 ABC Construction',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              Row(
+                                children: [
+                                  Icon(Icons.business, size: 20, color: Theme.of(context).colorScheme.primary),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'ABC Construction',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 8),
                               Row(

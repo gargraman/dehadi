@@ -154,6 +154,76 @@ class AppLocalizations {
   String get voiceSearchNotAvailable => get('voiceSearchNotAvailable');
   String get stop => get('stop');
   
+  // Onboarding
+  String get chooseYourRole => get('chooseYourRole');
+  String get workerRoleDescription => get('workerRoleDescription');
+  String get employerRoleDescription => get('employerRoleDescription');
+  String get selectYourSkills => get('selectYourSkills');
+  String get selectAtLeastOneSkill => get('selectAtLeastOneSkill');
+  String get whatSkillsDoYouHave => get('whatSkillsDoYouHave');
+  String get next => get('next');
+  String get back => get('back');
+  String get getStarted => get('getStarted');
+  String get skip => get('skip');
+  String get almostDone => get('almostDone');
+  String get letsGetStarted => get('letsGetStarted');
+  String get findWorkNearYou => get('findWorkNearYou');
+  String get hireSkillWorkers => get('hireSkillWorkers');
+  
+  // Post Job Screen
+  String get postNewJob => get('postNewJob');
+  String get jobTitle => get('jobTitle');
+  String get enterJobTitle => get('enterJobTitle');
+  String get jobTitleHint => get('jobTitleHint');
+  String get description => get('description');
+  String get enterDescription => get('enterDescription');
+  String get descriptionHint => get('descriptionHint');
+  String get payment => get('payment');
+  String get wageAmount => get('wageAmount');
+  String get selectWageType => get('selectWageType');
+  String get workerCount => get('workerCount');
+  String get selectWorkerCount => get('selectWorkerCount');
+  String get startDate => get('startDate');
+  String get selectStartDate => get('selectStartDate');
+  String get duration => get('duration');
+  String get selectDuration => get('selectDuration');
+  String get requiredSkills => get('requiredSkills');
+  String get selectSkills => get('selectSkills');
+  String get postJobButton => get('postJobButton');
+  String get saveAsDraft => get('saveAsDraft');
+  String get jobPostedSuccess => get('jobPostedSuccess');
+  String get jobPostingFailed => get('jobPostingFailed');
+  String get pleaseEnterJobTitle => get('pleaseEnterJobTitle');
+  String get pleaseEnterDescription => get('pleaseEnterDescription');
+  String get enterValidWage => get('enterValidWage');
+  String get today => get('today');
+  String get tomorrow => get('tomorrow');
+  String get thisWeek => get('thisWeek');
+  String get oneWeek => get('oneWeek');
+  String get twoWeeks => get('twoWeeks');
+  String get oneMonth => get('oneMonth');
+  String get ongoing => get('ongoing');
+  String get postingJob => get('postingJob');
+  String get useCurrentLocation => get('useCurrentLocation');
+  String get enterLocationManually => get('enterLocationManually');
+  String get selectJobCategory => get('selectJobCategory');
+  String get workersLabel => get('workersLabel');
+  
+  // Employer Dashboard
+  String get employerHub => get('employerHub');
+  String get myJobs => get('myJobs');
+  String get applications => get('applications');
+  String get activeJobs => get('activeJobs');
+  String get totalSpent => get('totalSpent');
+  String get workersHired => get('workersHired');
+  String get noJobsPosted => get('noJobsPosted');
+  String get postFirstJob => get('postFirstJob');
+  
+  // Error messages
+  String get networkError => get('networkError');
+  String get tryAgain => get('tryAgain');
+  String get somethingWentWrong => get('somethingWentWrong');
+  
   // Work types / Skills
   String get mason => get('mason');
   String get electrician => get('electrician');
@@ -341,6 +411,76 @@ const Map<String, String> _englishStrings = {
   'voiceSearchNotAvailable': 'Voice search not available',
   'stop': 'Stop',
   
+  // Onboarding
+  'chooseYourRole': 'How will you use HireConnect?',
+  'workerRoleDescription': 'Find daily wage jobs near you',
+  'employerRoleDescription': 'Post jobs and hire skilled workers',
+  'selectYourSkills': 'Select Your Skills',
+  'selectAtLeastOneSkill': 'Please select at least one skill',
+  'whatSkillsDoYouHave': 'What work can you do?',
+  'next': 'Next',
+  'back': 'Back',
+  'getStarted': 'Get Started',
+  'skip': 'Skip',
+  'almostDone': 'Almost done!',
+  'letsGetStarted': "Let's get started",
+  'findWorkNearYou': 'Find work opportunities near you',
+  'hireSkillWorkers': 'Hire skilled workers quickly',
+  
+  // Post Job Screen
+  'postNewJob': 'Post New Job',
+  'jobTitle': 'Job Title',
+  'enterJobTitle': 'Enter job title',
+  'jobTitleHint': 'e.g. Mason for construction work',
+  'description': 'Description',
+  'enterDescription': 'Enter job description',
+  'descriptionHint': 'Describe the work, requirements, and any special instructions',
+  'payment': 'Payment',
+  'wageAmount': 'Wage Amount',
+  'selectWageType': 'Payment Type',
+  'workerCount': 'Workers Needed',
+  'selectWorkerCount': 'How many workers?',
+  'startDate': 'Start Date',
+  'selectStartDate': 'When should work begin?',
+  'duration': 'Duration',
+  'selectDuration': 'How long is the job?',
+  'requiredSkills': 'Required Skills',
+  'selectSkills': 'Select skills needed',
+  'postJobButton': 'Post Job',
+  'saveAsDraft': 'Save as Draft',
+  'jobPostedSuccess': 'Job posted successfully!',
+  'jobPostingFailed': 'Failed to post job. Please try again.',
+  'pleaseEnterJobTitle': 'Please enter a job title',
+  'pleaseEnterDescription': 'Please enter a job description',
+  'enterValidWage': 'Please enter a valid wage amount',
+  'today': 'Today',
+  'tomorrow': 'Tomorrow',
+  'thisWeek': 'This Week',
+  'oneWeek': '1 Week',
+  'twoWeeks': '2 Weeks',
+  'oneMonth': '1 Month',
+  'ongoing': 'Ongoing',
+  'postingJob': 'Posting job...',
+  'useCurrentLocation': 'Use Current Location',
+  'enterLocationManually': 'Enter location manually',
+  'selectJobCategory': 'Select Job Category',
+  'workersLabel': 'workers',
+  
+  // Employer Dashboard
+  'employerHub': 'Employer Hub',
+  'myJobs': 'My Jobs',
+  'applications': 'Applications',
+  'activeJobs': 'Active Jobs',
+  'totalSpent': 'Total Spent',
+  'workersHired': 'Workers Hired',
+  'noJobsPosted': 'No jobs posted yet',
+  'postFirstJob': 'Post your first job to get started',
+  
+  // Error messages
+  'networkError': 'Network error. Please check your connection.',
+  'tryAgain': 'Try Again',
+  'somethingWentWrong': 'Something went wrong',
+  
   // Work types / Skills
   'mason': 'Mason',
   'electrician': 'Electrician',
@@ -384,12 +524,12 @@ const Map<String, String> _hindiStrings = {
   
   // Register screen
   'createAccount': 'अपना खाता बनाएं',
-  'joinMarketplace': 'भारत के सबसे बड़े कामगार मार्केटप्लेस में शामिल हों',
+  'joinMarketplace': 'भारत के सबसे बड़े वर्कर मार्केटप्लेस से जुड़ें',
   'iAm': 'मैं हूं:',
   'worker': 'कामगार',
   'employer': 'नियोक्ता',
-  'lookingForWork': 'काम ढूंढ रहा हूं',
-  'hiringWorkers': 'कामगार चाहिए',
+  'lookingForWork': 'काम की तलाश में',
+  'hiringWorkers': 'कामगार ढूंढ रहा हूं',
   'fullName': 'पूरा नाम',
   'enterFullName': 'अपना पूरा नाम दर्ज करें',
   'chooseUsername': 'यूज़रनेम चुनें',
@@ -397,8 +537,8 @@ const Map<String, String> _hindiStrings = {
   'phoneNumber': 'फ़ोन नंबर',
   'enterPhoneNumber': 'अपना फ़ोन नंबर दर्ज करें',
   'location': 'स्थान',
-  'enterCityArea': 'अपना शहर/इलाका दर्ज करें',
-  'yourSkills': 'आपकी कौशल:',
+  'enterCityArea': 'अपना शहर/क्षेत्र दर्ज करें',
+  'yourSkills': 'आपके कौशल:',
   'aadharOptional': 'आधार नंबर (वैकल्पिक)',
   'enterAadhar': 'अपना आधार नंबर दर्ज करें',
   'alreadyHaveAccount': 'पहले से खाता है?',
@@ -490,6 +630,76 @@ const Map<String, String> _hindiStrings = {
   'speakNow': 'अब बोलिए',
   'voiceSearchNotAvailable': 'वॉयस सर्च उपलब्ध नहीं है',
   'stop': 'रोकें',
+  
+  // Onboarding
+  'chooseYourRole': 'आप HireConnect का उपयोग कैसे करेंगे?',
+  'workerRoleDescription': 'अपने पास काम खोजें',
+  'employerRoleDescription': 'नौकरी पोस्ट करें और कुशल कामगार भर्ती करें',
+  'selectYourSkills': 'अपने कौशल चुनें',
+  'selectAtLeastOneSkill': 'कृपया कम से कम एक कौशल चुनें',
+  'whatSkillsDoYouHave': 'आप कौन सा काम कर सकते हैं?',
+  'next': 'आगे',
+  'back': 'वापस',
+  'getStarted': 'शुरू करें',
+  'skip': 'छोड़ें',
+  'almostDone': 'लगभग हो गया!',
+  'letsGetStarted': 'चलिए शुरू करते हैं',
+  'findWorkNearYou': 'अपने पास काम के अवसर खोजें',
+  'hireSkillWorkers': 'जल्दी से कुशल कामगार भर्ती करें',
+  
+  // Post Job Screen
+  'postNewJob': 'नई नौकरी पोस्ट करें',
+  'jobTitle': 'नौकरी का शीर्षक',
+  'enterJobTitle': 'नौकरी का शीर्षक दर्ज करें',
+  'jobTitleHint': 'जैसे: निर्माण कार्य के लिए राजमिस्त्री',
+  'description': 'विवरण',
+  'enterDescription': 'नौकरी का विवरण दर्ज करें',
+  'descriptionHint': 'काम, आवश्यकताएं और कोई विशेष निर्देश बताएं',
+  'payment': 'भुगतान',
+  'wageAmount': 'वेतन राशि',
+  'selectWageType': 'भुगतान प्रकार',
+  'workerCount': 'कामगारों की संख्या',
+  'selectWorkerCount': 'कितने कामगार चाहिए?',
+  'startDate': 'शुरुआत की तारीख',
+  'selectStartDate': 'काम कब शुरू होना चाहिए?',
+  'duration': 'अवधि',
+  'selectDuration': 'नौकरी कितने समय की है?',
+  'requiredSkills': 'आवश्यक कौशल',
+  'selectSkills': 'आवश्यक कौशल चुनें',
+  'postJobButton': 'नौकरी पोस्ट करें',
+  'saveAsDraft': 'ड्राफ्ट सेव करें',
+  'jobPostedSuccess': 'नौकरी सफलतापूर्वक पोस्ट हो गई!',
+  'jobPostingFailed': 'नौकरी पोस्ट करने में विफल। कृपया पुनः प्रयास करें।',
+  'pleaseEnterJobTitle': 'कृपया नौकरी का शीर्षक दर्ज करें',
+  'pleaseEnterDescription': 'कृपया नौकरी का विवरण दर्ज करें',
+  'enterValidWage': 'कृपया सही वेतन राशि दर्ज करें',
+  'today': 'आज',
+  'tomorrow': 'कल',
+  'thisWeek': 'इस हफ्ते',
+  'oneWeek': '1 हफ्ता',
+  'twoWeeks': '2 हफ्ते',
+  'oneMonth': '1 महीना',
+  'ongoing': 'चालू',
+  'postingJob': 'नौकरी पोस्ट हो रही है...',
+  'useCurrentLocation': 'वर्तमान स्थान उपयोग करें',
+  'enterLocationManually': 'स्थान मैन्युअल रूप से दर्ज करें',
+  'selectJobCategory': 'नौकरी श्रेणी चुनें',
+  'workersLabel': 'कामगार',
+  
+  // Employer Dashboard
+  'employerHub': 'नियोक्ता हब',
+  'myJobs': 'मेरी नौकरियां',
+  'applications': 'आवेदन',
+  'activeJobs': 'सक्रिय नौकरियां',
+  'totalSpent': 'कुल खर्च',
+  'workersHired': 'भर्ती कामगार',
+  'noJobsPosted': 'अभी तक कोई नौकरी पोस्ट नहीं की',
+  'postFirstJob': 'शुरू करने के लिए अपनी पहली नौकरी पोस्ट करें',
+  
+  // Error messages
+  'networkError': 'नेटवर्क त्रुटि। कृपया अपना कनेक्शन जांचें।',
+  'tryAgain': 'पुनः प्रयास करें',
+  'somethingWentWrong': 'कुछ गलत हो गया',
   
   // Work types / Skills
   'mason': 'राजमिस्त्री',
