@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
 
@@ -96,15 +97,18 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Messages'),
+        title: Text(l10n?.messages ?? 'Messages'),
         actions: [
           IconButton(
             icon: const Icon(Icons.chat),
             onPressed: () {
               // Handle new chat
             },
+            tooltip: l10n?.newChat ?? 'New Chat',
           ),
           PopupMenuButton<String>(
             onSelected: (String value) {
@@ -113,18 +117,18 @@ class _MessagesScreenState extends State<MessagesScreen> {
               }
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'profile',
-                child: Text('Profile'),
+                child: Text(l10n?.profile ?? 'Profile'),
               ),
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'settings',
-                child: Text('Settings'),
+                child: Text(l10n?.settings ?? 'Settings'),
               ),
               const PopupMenuDivider(),
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'logout',
-                child: Text('Logout'),
+                child: Text(l10n?.logout ?? 'Logout'),
               ),
             ],
           ),
@@ -138,7 +142,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
             // Search bar
             TextField(
               decoration: InputDecoration(
-                hintText: 'Search conversations...',
+                hintText: l10n?.searchPlaceholder ?? 'Search conversations...',
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -148,9 +152,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
             const SizedBox(height: 20),
             
             // Conversations list
-            const Text(
-              'Conversations',
-              style: TextStyle(
+            Text(
+              l10n?.navMessages ?? 'Conversations',
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
