@@ -89,6 +89,57 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
     }
   });
 
+  // Nearby jobs endpoint - search by coordinates
+  app.get("/api/jobs/nearby", async (req, res) => {
+    try {
+      const { lat, lng, radius, status } = req.query;
+      
+      // Validate required parameters
+      if (!lat || !lng) {
+        return res.status(400).json({ 
+          message: "Missing required parameters: lat and lng are required" 
+        });
+      }
+      
+      const latitude = parseFloat(lat as string);
+      const longitude = parseFloat(lng as string);
+      const radiusKm = radius ? parseFloat(radius as string) : 5; // Default 5km
+      
+      // Validate numeric values
+      if (isNaN(latitude) || isNaN(longitude)) {
+        return res.status(400).json({ 
+          message: "Invalid coordinates: lat and lng must be valid numbers" 
+        });
+      }
+      
+      // Validate coordinate ranges
+      if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+        return res.status(400).json({ 
+          message: "Invalid coordinates: lat must be -90 to 90, lng must be -180 to 180" 
+        });
+      }
+      
+      // Validate radius
+      if (isNaN(radiusKm) || radiusKm <= 0 || radiusKm > 100) {
+        return res.status(400).json({ 
+          message: "Invalid radius: must be between 0 and 100 km" 
+        });
+      }
+      
+      const jobs = await storage.getJobsNearby(
+        latitude, 
+        longitude, 
+        radiusKm, 
+        status as string | undefined
+      );
+      
+      res.json(jobs);
+    } catch (error) {
+      logger.error("Failed to fetch nearby jobs", { error });
+      res.status(500).json({ message: "Failed to fetch nearby jobs" });
+    }
+  });
+
   app.get("/api/jobs/:id", async (req, res) => {
     try {
       const job = await storage.getJob(req.params.id);

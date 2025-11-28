@@ -17,13 +17,44 @@ import {
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, and, or, desc, ne, isNull } from "drizzle-orm";
+import { eq, and, or, desc, ne, isNull, sql } from "drizzle-orm";
 import { logger } from "./lib/logger";
+
+// Haversine formula to calculate distance between two points (in km)
+function calculateHaversineDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371; // Earth's radius in kilometers
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c;
+  
+  return Math.round(distance * 10) / 10; // Round to 1 decimal place
+}
+
+function toRad(deg: number): number {
+  return deg * (Math.PI / 180);
+}
 
 // Enhanced JobApplication type for methods that return JOIN data
 export type EnrichedJobApplication = JobApplication & {
   job: Job;
   worker: User;
+};
+
+// Job with distance for nearby search results
+export type JobWithDistance = Job & {
+  distance: number; // Distance in kilometers
 };
 
 export interface IStorage {
@@ -34,6 +65,7 @@ export interface IStorage {
 
   // Job methods
   getJobs(filters?: { workType?: string; location?: string; status?: string }): Promise<Job[]>;
+  getJobsNearby(lat: number, lng: number, radiusKm: number, status?: string): Promise<JobWithDistance[]>;
   getJob(id: string): Promise<Job | undefined>;
   createJob(job: InsertJob): Promise<Job>;
   updateJobStatus(id: string, status: string): Promise<Job | undefined>;
@@ -131,6 +163,36 @@ export class MemStorage implements IStorage {
     }
     
     return jobs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async getJobsNearby(lat: number, lng: number, radiusKm: number, status?: string): Promise<JobWithDistance[]> {
+    const allJobs = Array.from(this.jobs.values());
+    
+    const jobsWithDistance: JobWithDistance[] = [];
+    
+    for (const job of allJobs) {
+      // Skip jobs without coordinates
+      if (!job.locationLat || !job.locationLng) continue;
+      
+      // Filter by status if specified (default to 'open' jobs)
+      if (status && job.status !== status) continue;
+      if (!status && job.status !== 'open') continue;
+      
+      const jobLat = parseFloat(job.locationLat);
+      const jobLng = parseFloat(job.locationLng);
+      
+      if (isNaN(jobLat) || isNaN(jobLng)) continue;
+      
+      const distance = calculateHaversineDistance(lat, lng, jobLat, jobLng);
+      
+      // Only include jobs within the radius
+      if (distance <= radiusKm) {
+        jobsWithDistance.push({ ...job, distance });
+      }
+    }
+    
+    // Sort by distance (closest first)
+    return jobsWithDistance.sort((a, b) => a.distance - b.distance);
   }
 
   async getJob(id: string): Promise<Job | undefined> {
@@ -440,6 +502,41 @@ export class DatabaseStorage implements IStorage {
     }
 
     return result;
+  }
+
+  async getJobsNearby(lat: number, lng: number, radiusKm: number, status?: string): Promise<JobWithDistance[]> {
+    // Get all jobs with coordinates, filter by status
+    const conditions = [];
+    
+    // Filter by status (default to 'open' if not specified)
+    const targetStatus = status || 'open';
+    conditions.push(eq(jobs.status, targetStatus));
+
+    const allJobs = await this.db.select().from(jobs)
+      .where(and(...conditions))
+      .orderBy(desc(jobs.createdAt));
+
+    const jobsWithDistance: JobWithDistance[] = [];
+
+    for (const job of allJobs) {
+      // Skip jobs without coordinates
+      if (!job.locationLat || !job.locationLng) continue;
+
+      const jobLat = parseFloat(job.locationLat);
+      const jobLng = parseFloat(job.locationLng);
+
+      if (isNaN(jobLat) || isNaN(jobLng)) continue;
+
+      const distance = calculateHaversineDistance(lat, lng, jobLat, jobLng);
+
+      // Only include jobs within the radius
+      if (distance <= radiusKm) {
+        jobsWithDistance.push({ ...job, distance });
+      }
+    }
+
+    // Sort by distance (closest first)
+    return jobsWithDistance.sort((a, b) => a.distance - b.distance);
   }
 
   async getJob(id: string): Promise<Job | undefined> {
