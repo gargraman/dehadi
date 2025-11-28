@@ -1,21 +1,21 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowLeft, Search as SearchIcon, X, Mic } from 'lucide-react';
+import { ArrowLeft, Search as SearchIcon, X, Mic, MapPin, Wrench, Zap, Droplets, Hammer, Paintbrush, HardHat, Car, Sparkles, Briefcase, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
 import JobCard from '@/components/JobCard';
 import { useJobs } from '@/hooks/useJobs';
 
-// Work types with emojis for simple selection
 const workTypes = [
-  { id: 'mason', name: '🧱 मेसन', english: 'Mason' },
-  { id: 'electrician', name: '⚡ बिजली वाला', english: 'Electrician' },
-  { id: 'plumber', name: '🔧 नल वाला', english: 'Plumber' },
-  { id: 'carpenter', name: '🔨 बढ़ई', english: 'Carpenter' },
-  { id: 'painter', name: '🎨 रंगाई', english: 'Painter' },
-  { id: 'helper', name: '🤝 मददगार', english: 'Helper' },
-  { id: 'driver', name: '🚗 ड्राइवर', english: 'Driver' },
-  { id: 'cleaner', name: '✨ सफाई', english: 'Cleaner' },
+  { id: 'mason', name: 'मेसन', english: 'Mason', icon: Wrench, color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+  { id: 'electrician', name: 'बिजली वाला', english: 'Electrician', icon: Zap, color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
+  { id: 'plumber', name: 'नल वाला', english: 'Plumber', icon: Droplets, color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+  { id: 'carpenter', name: 'बढ़ई', english: 'Carpenter', icon: Hammer, color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+  { id: 'painter', name: 'रंगाई', english: 'Painter', icon: Paintbrush, color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
+  { id: 'helper', name: 'मददगार', english: 'Helper', icon: HardHat, color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' },
+  { id: 'driver', name: 'ड्राइवर', english: 'Driver', icon: Car, color: 'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400' },
+  { id: 'cleaner', name: 'सफाई', english: 'Cleaner', icon: Sparkles, color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400' },
 ];
 
 export default function Search() {
@@ -24,7 +24,6 @@ export default function Search() {
   const [selectedWorkType, setSelectedWorkType] = useState('');
   const { data: jobs = [] } = useJobs();
 
-  // Simple filtering - no complex logic
   const filteredJobs = jobs.filter(job => {
     if (selectedWorkType && job.workType !== selectedWorkType) return false;
     if (searchText && !job.location.toLowerCase().includes(searchText.toLowerCase())) return false;
@@ -32,148 +31,171 @@ export default function Search() {
   });
 
   const handleWorkTypeSelect = (workType: string) => {
-    if (selectedWorkType === workType) {
-      setSelectedWorkType(''); // Deselect if clicking same type
-    } else {
-      setSelectedWorkType(workType);
-    }
+    setSelectedWorkType(selectedWorkType === workType ? '' : workType);
   };
 
   return (
-    <div className="min-h-screen bg-white pb-32">
-      {/* Simplified Header */}
-      <header className="bg-blue-500 text-white px-4 py-6">
-        <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-background pb-28">
+      {/* Header */}
+      <header className="bg-primary text-primary-foreground px-4 py-5">
+        <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate('/')}
-            className="text-white hover:bg-white/20"
+            className="text-primary-foreground hover:bg-primary-foreground/10"
           >
-            <ArrowLeft size={24} />
+            <ArrowLeft className="w-6 h-6" />
           </Button>
-          <div className="flex-1 text-center">
-            <h1 className="text-2xl font-bold">🔍 काम खोजें</h1>
-            <p className="text-blue-100">Find Work</p>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold">काम खोजें</h1>
+            <p className="text-sm text-primary-foreground/80">Find Work</p>
           </div>
         </div>
       </header>
 
-      <div className="px-4 py-6 space-y-8">
-        {/* Voice Search Button */}
+      <div className="px-4 py-5 space-y-6">
+        {/* Voice Search */}
         <div className="text-center">
           <Button
             size="lg"
-            className="h-20 w-20 rounded-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-xl mb-4"
+            className="h-20 w-20 rounded-full bg-gradient-to-r from-primary to-primary/80 shadow-lg mb-3"
             onClick={() => console.log('Voice search activated')}
+            data-testid="button-voice-search"
           >
-            <Mic size={40} />
+            <Mic className="w-10 h-10" />
           </Button>
-          <p className="text-lg font-semibold text-gray-700">🎤 बोलकर खोजें</p>
-          <p className="text-sm text-gray-500">Speak to Search</p>
+          <p className="text-base font-semibold">बोलकर खोजें</p>
+          <p className="text-sm text-muted-foreground">Speak to Search</p>
         </div>
 
-        {/* Simple Text Search */}
-        <div>
-          <p className="text-lg font-semibold text-gray-800 mb-3">📍 जगह का नाम लिखें</p>
-          <p className="text-sm text-gray-600 mb-4">Enter Location Name</p>
+        {/* Location Search */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-destructive" />
+            <div>
+              <p className="text-sm font-semibold">जगह का नाम लिखें</p>
+              <p className="text-xs text-muted-foreground">Enter Location</p>
+            </div>
+          </div>
           <div className="relative">
             <Input
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               placeholder="जैसे: अंधेरी, मुंबई"
-              className="h-16 text-xl pl-4 pr-12 rounded-2xl border-4 border-gray-300 focus:border-blue-500"
+              className="h-14 text-lg pl-4 pr-12 rounded-xl"
+              data-testid="input-location-search"
             />
             {searchText && (
               <button
                 onClick={() => setSearchText('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
-                <X size={24} className="text-gray-500" />
+                <X className="w-5 h-5" />
               </button>
             )}
           </div>
         </div>
 
         {/* Work Type Selection */}
-        <div>
-          <p className="text-lg font-semibold text-gray-800 mb-3">💼 किस तरह का काम?</p>
-          <p className="text-sm text-gray-600 mb-4">What type of work?</p>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Briefcase className="w-5 h-5 text-primary" />
+            <div>
+              <p className="text-sm font-semibold">किस तरह का काम?</p>
+              <p className="text-xs text-muted-foreground">What type of work?</p>
+            </div>
+          </div>
+          
           <div className="grid grid-cols-2 gap-3">
-            {workTypes.map((type) => (
-              <Button
-                key={type.id}
-                variant={selectedWorkType === type.id ? "default" : "outline"}
-                className={`h-20 text-left p-4 rounded-2xl border-2 transition-all ${
-                  selectedWorkType === type.id
-                    ? 'bg-blue-500 text-white border-blue-500 shadow-lg'
-                    : 'border-gray-300 hover:border-blue-400'
-                }`}
-                onClick={() => handleWorkTypeSelect(type.id)}
-              >
-                <div>
-                  <div className="text-lg font-bold">{type.name}</div>
-                  <div className="text-sm opacity-75">{type.english}</div>
-                </div>
-              </Button>
-            ))}
+            {workTypes.map((type) => {
+              const IconComponent = type.icon;
+              const isSelected = selectedWorkType === type.id;
+              
+              return (
+                <Button
+                  key={type.id}
+                  variant={isSelected ? "default" : "outline"}
+                  className={`h-16 justify-start gap-3 rounded-xl ${
+                    isSelected ? '' : 'hover-elevate'
+                  }`}
+                  onClick={() => handleWorkTypeSelect(type.id)}
+                  data-testid={`filter-${type.id}`}
+                >
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isSelected ? 'bg-primary-foreground/20' : type.color}`}>
+                    <IconComponent className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-sm font-semibold">{type.name}</div>
+                    <div className="text-xs opacity-70">{type.english}</div>
+                  </div>
+                </Button>
+              );
+            })}
           </div>
 
           {/* Clear Filter */}
           {selectedWorkType && (
-            <div className="text-center mt-4">
+            <div className="text-center">
               <Button
-                variant="outline"
+                variant="ghost"
+                size="sm"
                 onClick={() => setSelectedWorkType('')}
-                className="px-6 py-3 rounded-xl"
+                className="text-muted-foreground"
               >
-                🗑️ साफ करें (Clear)
+                <RotateCcw className="w-4 h-4 mr-2" />
+                साफ करें • Clear Filter
               </Button>
             </div>
           )}
         </div>
 
         {/* Results Count */}
-        <div className="text-center bg-green-50 p-4 rounded-2xl">
-          <p className="text-2xl font-bold text-green-800">{filteredJobs.length}</p>
-          <p className="text-lg text-green-700">काम मिले</p>
-          <p className="text-sm text-green-600">Jobs Found</p>
-        </div>
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="p-4 text-center">
+            <p className="text-3xl font-bold text-primary">{filteredJobs.length}</p>
+            <p className="text-sm text-muted-foreground">काम मिले • Jobs Found</p>
+          </CardContent>
+        </Card>
 
         {/* Job Results */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {filteredJobs.length > 0 ? (
             filteredJobs.map((job) => (
               <JobCard
                 key={job.id}
                 id={job.id}
                 title={job.workType}
-                employer="काम देने वाला"
+                employer="Employer"
                 location={job.location}
-                distance="पास में"
+                distance="Nearby"
                 wageType={job.wageType as 'daily' | 'hourly' | 'fixed'}
                 wage={job.wage.toString()}
                 skills={job.skills || []}
-                postedTime="आज"
+                postedTime="Today"
                 headcount={job.headcount || undefined}
                 status={job.status}
               />
             ))
           ) : (
-            <div className="text-center py-12">
-              <div className="text-8xl mb-4">😔</div>
-              <p className="text-2xl font-semibold text-gray-700 mb-2">कोई काम नहीं मिला</p>
-              <p className="text-lg text-gray-500 mb-6">No work found</p>
-              <Button
-                onClick={() => {
-                  setSearchText('');
-                  setSelectedWorkType('');
-                }}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-4 text-lg rounded-xl"
-              >
-                🔄 फिर से खोजें
-              </Button>
-            </div>
+            <Card className="text-center p-8">
+              <CardContent className="space-y-4">
+                <SearchIcon className="w-16 h-16 text-muted-foreground mx-auto" />
+                <div>
+                  <p className="text-lg font-semibold">कोई काम नहीं मिला</p>
+                  <p className="text-sm text-muted-foreground">No jobs found</p>
+                </div>
+                <Button
+                  onClick={() => {
+                    setSearchText('');
+                    setSelectedWorkType('');
+                  }}
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  फिर से खोजें • Reset Search
+                </Button>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>

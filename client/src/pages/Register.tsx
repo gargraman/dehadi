@@ -99,7 +99,7 @@ export default function Register() {
     const submitData: RegisterRequest = {
       username: formData.username.trim(),
       password: formData.password,
-      role: formData.role,
+      role: formData.role as 'worker' | 'employer' | 'ngo',
       fullName: formData.fullName.trim(),
       phone: formData.phone.trim(),
       language: formData.language,
