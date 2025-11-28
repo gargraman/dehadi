@@ -13,6 +13,12 @@ import { seed } from "../db/seed";
 
 const app = express();
 
+// Fast health check endpoint - responds immediately without any middleware
+// This MUST be before any other middleware to ensure quick response for load balancers
+app.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: Date.now() });
+});
+
 // Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -88,6 +94,18 @@ app.use(session({
     // Start server - always bind to 0.0.0.0 for cloud environments
     const port = parseInt(process.env.PORT || '5000', 10);
     const host = '0.0.0.0';
+    
+    server.on('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE') {
+        logger.error(`Port ${port} is already in use`, { port, host });
+      } else if (err.code === 'EACCES') {
+        logger.error(`Permission denied to bind to port ${port}`, { port, host });
+      } else {
+        logger.error('Server error occurred', { error: err.message, code: err.code });
+      }
+      process.exit(1);
+    });
+
     server.listen(port, host, () => {
       logger.info(`Server started successfully`, {
         port,
@@ -96,7 +114,25 @@ app.use(session({
       });
     });
   } catch (error) {
-    logger.error('Failed to start server', { error });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    logger.error('Failed to start server', { 
+      error: errorMessage, 
+      stack: errorStack,
+      env: process.env.NODE_ENV 
+    });
     process.exit(1);
   }
 })();
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught exception', { error: error.message, stack: error.stack });
+  process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled rejection', { reason: String(reason) });
+  process.exit(1);
+});

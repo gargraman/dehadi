@@ -43,18 +43,35 @@ export async function registerRoutes(app: Express, dependencies: IDependencies):
   const { storage, paymentClient, paymentConfig } = dependencies;
   
   // Health check endpoint for load balancers and monitoring
+  // Uses a timeout to avoid blocking if database is slow
   app.get("/api/health", async (_req, res) => {
+    const startTime = Date.now();
+    const timeout = 3000; // 3 second timeout for DB check
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    
     try {
-      // Check database connectivity
-      await storage.getJobs({ status: "open" });
+      // Quick database connectivity check with timeout
+      const dbCheckPromise = storage.getJobs({ status: "open" });
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('Database check timeout')), timeout);
+      });
+      
+      await Promise.race([dbCheckPromise, timeoutPromise]);
+      
+      // Clear timeout on success
+      if (timeoutId) clearTimeout(timeoutId);
+      
       res.status(200).json({ 
         status: "healthy", 
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || "development"
+        environment: process.env.NODE_ENV || "development",
+        responseTime: Date.now() - startTime
       });
     } catch (error) {
+      // Clear timeout on error
+      if (timeoutId) clearTimeout(timeoutId);
+      
       // Log health check failure for monitoring and debugging
-      // Better error serialization to avoid generic [object Object]
       const serializedError = error instanceof Error
         ? { message: error.message, stack: error.stack }
         : typeof error === 'object'
