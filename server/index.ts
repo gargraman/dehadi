@@ -80,9 +80,9 @@ app.use(session({
     // Global error handler (must be last)
     app.use(errorHandler);
 
-    // Start server
+    // Start server - always bind to 0.0.0.0 for cloud environments
     const port = parseInt(process.env.PORT || '5000', 10);
-    const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
+    const host = '0.0.0.0';
     server.listen(port, host, () => {
       logger.info(`Server started successfully`, {
         port,
