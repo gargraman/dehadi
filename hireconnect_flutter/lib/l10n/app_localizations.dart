@@ -219,6 +219,25 @@ class AppLocalizations {
   String get noJobsPosted => get('noJobsPosted');
   String get postFirstJob => get('postFirstJob');
   
+  // Messages screen
+  String get messages => get('messages');
+  String get newChat => get('newChat');
+  String get noMessages => get('noMessages');
+  String get noConversations => get('noConversations');
+  String get startConversation => get('startConversation');
+  String get typeMessage => get('typeMessage');
+  String get send => get('send');
+  
+  // Job Details screen
+  String get jobDetails => get('jobDetails');
+  String get nearbyJobs => get('nearbyJobs');
+  String get searchRadius => get('searchRadius');
+  
+  // Common actions
+  String get settings => get('settings');
+  String get call => get('call');
+  String get message => get('message');
+  
   // Error messages
   String get networkError => get('networkError');
   String get tryAgain => get('tryAgain');
@@ -476,6 +495,25 @@ const Map<String, String> _englishStrings = {
   'noJobsPosted': 'No jobs posted yet',
   'postFirstJob': 'Post your first job to get started',
   
+  // Messages screen
+  'messages': 'Messages',
+  'newChat': 'New Chat',
+  'noMessages': 'No messages yet',
+  'noConversations': 'No conversations yet',
+  'startConversation': 'Start a conversation with an employer',
+  'typeMessage': 'Type a message...',
+  'send': 'Send',
+  
+  // Job Details screen
+  'jobDetails': 'Job Details',
+  'nearbyJobs': 'Nearby Jobs',
+  'searchRadius': 'Select Search Radius',
+  
+  // Common actions
+  'settings': 'Settings',
+  'call': 'Call',
+  'message': 'Message',
+  
   // Error messages
   'networkError': 'Network error. Please check your connection.',
   'tryAgain': 'Try Again',
@@ -695,6 +733,25 @@ const Map<String, String> _hindiStrings = {
   'workersHired': 'भर्ती कामगार',
   'noJobsPosted': 'अभी तक कोई नौकरी पोस्ट नहीं की',
   'postFirstJob': 'शुरू करने के लिए अपनी पहली नौकरी पोस्ट करें',
+  
+  // Messages screen
+  'messages': 'संदेश',
+  'newChat': 'नई चैट',
+  'noMessages': 'अभी तक कोई संदेश नहीं',
+  'noConversations': 'अभी तक कोई बातचीत नहीं',
+  'startConversation': 'किसी नियोक्ता से बातचीत शुरू करें',
+  'typeMessage': 'संदेश लिखें...',
+  'send': 'भेजें',
+  
+  // Job Details screen
+  'jobDetails': 'नौकरी विवरण',
+  'nearbyJobs': 'आस-पास की नौकरियां',
+  'searchRadius': 'खोज दायरा चुनें',
+  
+  // Common actions
+  'settings': 'सेटिंग्स',
+  'call': 'कॉल करें',
+  'message': 'संदेश',
   
   // Error messages
   'networkError': 'नेटवर्क त्रुटि। कृपया अपना कनेक्शन जांचें।',
