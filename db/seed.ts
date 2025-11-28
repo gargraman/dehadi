@@ -114,7 +114,7 @@ async function insertMessages(seedData: AllSeedData, idMap: IdMap): Promise<void
 
 async function insertPayments(seedData: AllSeedData, idMap: IdMap): Promise<void> {
   for (const seedPayment of seedData.payments) {
-    const { seedId, seedJobId, seedEmployerId, seedWorkerId, paidAt, ...paymentData } = seedPayment;
+    const { seedId, seedJobId, seedEmployerId, seedWorkerId, ...paymentData } = seedPayment;
     
     const jobId = idMap.jobs.get(seedJobId);
     const employerId = idMap.users.get(seedEmployerId);
