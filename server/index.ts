@@ -9,6 +9,7 @@ import { createAuthRoutes } from "./routes/auth.routes";
 import { errorHandler, notFoundHandler } from "./middleware/error.middleware";
 import { logger, requestLogger } from "./lib/logger";
 import { pool, ready } from "./db";
+import { seed } from "../db/seed";
 
 const app = express();
 
@@ -52,6 +53,9 @@ app.use(session({
   // Ensure database driver/client initialized before proceeding
   await ready;
   try {
+    // Seed database with initial data (idempotent - only seeds if empty)
+    await seed();
+    
     const dependencies = createProductionDependencies();
 
     // Setup authentication with Passport
