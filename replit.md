@@ -29,9 +29,10 @@ The platform features a mobile-first responsive design with a bottom navigation 
 
 **Backend:**
 - **Framework:** Express.js with TypeScript on Node.js, RESTful API.
-- **Data Layer:** Drizzle ORM, Neon Serverless PostgreSQL.
+- **Data Layer:** Drizzle ORM with Supabase PostgreSQL (session pooler connection).
 - **Storage:** Database persistence via `DatabaseStorage`.
-- **Authentication:** Currently LocalStorage-based, future plans for JWT and RBAC.
+- **Authentication:** Passport.js with LocalStrategy, express-session with PostgreSQL store.
+- **Database Connection:** Uses SSL-enabled connection to Supabase with `ssl: { rejectUnauthorized: false }` for pooler compatibility.
 
 **Payment Integration & Job Lifecycle:**
 - **Payment Gateway:** Razorpay integration for UPI and online payments.
@@ -47,9 +48,15 @@ The platform features a mobile-first responsive design with a bottom navigation 
 ## External Dependencies
 
 ### Third-Party Services
-- **Database:** Neon Serverless PostgreSQL (`@neondatabase/serverless`).
+- **Database:** Supabase PostgreSQL (session pooler via `aws-1-ap-northeast-2.pooler.supabase.com:5432`). Environment variables: `SUPABASE_DATABASE_URL`, `SUPABASE_PGHOST`, etc.
 - **Payment Gateway:** Razorpay.
 - **Fonts & Assets:** Google Fonts API (Inter, Noto Sans), Material Icons.
+
+### Database Migration (December 2025)
+- Migrated from Replit PostgreSQL to Supabase for production readiness
+- Schema managed via Drizzle ORM with migrations in `/migrations` folder
+- Session table created for express-session persistence
+- Test credentials: rajesh_kumar1/test123 (worker), arjun_malhotra1/test123 (employer), admin/test123 (admin)
 
 ### UI Component Libraries
 - **Web:** Radix UI, Shadcn/ui, lucide-react (icons), Tailwind CSS, `class-variance-authority`, `clsx`, `tailwind-merge`.
