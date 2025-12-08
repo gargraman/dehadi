@@ -162,7 +162,7 @@ function serveStatic(expressApp: express.Express) {
     logger.info('Authentication routes registered');
 
     console.log('Registering application routes...');
-    const server = await registerRoutes(app, dependencies);
+    await registerRoutes(app, dependencies);
     console.log('Application routes registered');
     logger.info('Application routes registered');
 
@@ -180,18 +180,20 @@ function serveStatic(expressApp: express.Express) {
     
     console.log(`Attempting to listen on ${host}:${port}...`);
     
+    // Use Express's listen directly instead of HTTP server
+    const server = app.listen(port, host, () => {
+      console.log(`Server listening on ${host}:${port}`);
+      logger.info(`Server started successfully`, { port, host, environment: 'production' });
+    });
+    
     server.on('error', (err: NodeJS.ErrnoException) => {
       console.error('Server error:', err.message, err.code);
       logger.error('Server error', { error: err.message, code: err.code });
       process.exit(1);
     });
-
-    server.listen(port, host, () => {
-      console.log(`Server listening on ${host}:${port}`);
-      logger.info(`Server started successfully`, { port, host, environment: 'production' });
-    });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Failed to start server:', errorMessage);
     logger.error('Failed to start server', { error: errorMessage });
     process.exit(1);
   }
