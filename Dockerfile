@@ -94,9 +94,8 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy ALL dependencies (including dev) to ensure nothing is missing
-# We use deps-dev instead of deps-prod for maximum compatibility
-COPY --from=deps-dev /app/node_modules ./node_modules
+# Copy production dependencies only (prod entry point has no Vite references)
+COPY --from=deps-prod /app/node_modules ./node_modules
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
