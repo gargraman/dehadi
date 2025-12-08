@@ -3,7 +3,6 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import cors from "cors";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic } from "./vite";
 import { createProductionDependencies } from "./dependencies";
 import { setupAuthentication } from "./middleware/auth.middleware";
 import { createAuthRoutes } from "./routes/auth.routes";
@@ -115,9 +114,13 @@ app.use(session({
 
     // Setup Vite in development, serve static in production
     // This must be before 404 handler so UI routes are handled by Vite
+    // Using dynamic imports to avoid loading Vite dependencies in production
     if (app.get("env") === "development") {
+      const { setupVite } = await import("./vite");
       await setupVite(app, server);
     } else {
+      // Use separate static module without Vite dependencies for production
+      const { serveStatic } = await import("./static");
       serveStatic(app);
     }
 
