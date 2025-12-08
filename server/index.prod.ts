@@ -129,30 +129,43 @@ function serveStatic(expressApp: express.Express) {
     const dependencies = createProductionDependencies();
     console.log('Dependencies created');
 
+    console.log('Setting up authentication...');
     setupAuthentication(app, dependencies.storage);
+    console.log('Authentication setup complete');
     logger.info('Authentication system initialized');
 
+    console.log('Creating auth routes...');
     app.use('/api/auth', createAuthRoutes(dependencies.storage));
+    console.log('Auth routes created');
     logger.info('Authentication routes registered');
 
+    console.log('Registering application routes...');
     const server = await registerRoutes(app, dependencies);
+    console.log('Application routes registered');
     logger.info('Application routes registered');
 
     // Serve static files in production
+    console.log('Setting up static file serving...');
     serveStatic(app);
+    console.log('Static file serving setup complete');
 
     app.use(notFoundHandler);
     app.use(errorHandler);
 
+    // Railway provides PORT - use it directly
     const port = parseInt(process.env.PORT || '5000', 10);
     const host = '0.0.0.0';
     
+    console.log(`Attempting to listen on ${host}:${port}...`);
+    
     server.on('error', (err: NodeJS.ErrnoException) => {
+      console.error('Server error:', err.message, err.code);
       logger.error('Server error', { error: err.message, code: err.code });
       process.exit(1);
     });
 
     server.listen(port, host, () => {
+      console.log(`Server listening on ${host}:${port}`);
       logger.info(`Server started successfully`, { port, host, environment: 'production' });
     });
   } catch (error) {
