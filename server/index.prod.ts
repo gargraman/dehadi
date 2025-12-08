@@ -90,7 +90,7 @@ app.use(session({
 function serveStatic(expressApp: express.Express) {
   // Use fileURLToPath for ESM compatibility across Node.js versions
   const currentDir = path.dirname(new URL(import.meta.url).pathname);
-  const distPath = path.resolve(currentDir, "public");
+  let distPath = path.resolve(currentDir, "public");
 
   console.log(`Looking for static files at: ${distPath}`);
   
@@ -100,17 +100,21 @@ function serveStatic(expressApp: express.Express) {
     const altPath = path.resolve(process.cwd(), "dist", "public");
     console.log(`Trying alternative path: ${altPath}`);
     if (fs.existsSync(altPath)) {
-      expressApp.use(express.static(altPath));
-      expressApp.use("*", (_req, res) => {
-        res.sendFile(path.resolve(altPath, "index.html"));
-      });
-      return;
+      distPath = altPath;
+    } else {
+      throw new Error(`Could not find the build directory at ${distPath} or ${altPath}`);
     }
-    throw new Error(`Could not find the build directory at ${distPath} or ${altPath}`);
   }
 
+  // Serve static files
   expressApp.use(express.static(distPath));
-  expressApp.use("*", (_req, res) => {
+  
+  // Catch-all for frontend routes ONLY (exclude /api and /health)
+  expressApp.get("*", (req, res, next) => {
+    // Skip API routes and health check
+    if (req.path.startsWith('/api') || req.path === '/health') {
+      return next();
+    }
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
