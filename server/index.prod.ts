@@ -88,10 +88,25 @@ app.use(session({
 
 // Static file serving for production
 function serveStatic(expressApp: express.Express) {
-  const distPath = path.resolve(import.meta.dirname, "public");
+  // Use fileURLToPath for ESM compatibility across Node.js versions
+  const currentDir = path.dirname(new URL(import.meta.url).pathname);
+  const distPath = path.resolve(currentDir, "public");
 
+  console.log(`Looking for static files at: ${distPath}`);
+  
   if (!fs.existsSync(distPath)) {
-    throw new Error(`Could not find the build directory: ${distPath}`);
+    console.error(`Static files not found at: ${distPath}`);
+    // Try alternative path
+    const altPath = path.resolve(process.cwd(), "dist", "public");
+    console.log(`Trying alternative path: ${altPath}`);
+    if (fs.existsSync(altPath)) {
+      expressApp.use(express.static(altPath));
+      expressApp.use("*", (_req, res) => {
+        res.sendFile(path.resolve(altPath, "index.html"));
+      });
+      return;
+    }
+    throw new Error(`Could not find the build directory at ${distPath} or ${altPath}`);
   }
 
   expressApp.use(express.static(distPath));
@@ -102,12 +117,17 @@ function serveStatic(expressApp: express.Express) {
 
 (async () => {
   try {
+    console.log('Starting server initialization...');
     await ready;
+    console.log('Database ready');
     logger.info('Database connection established');
 
     await seed();
+    console.log('Seeding complete');
     
+    console.log('Creating dependencies...');
     const dependencies = createProductionDependencies();
+    console.log('Dependencies created');
 
     setupAuthentication(app, dependencies.storage);
     logger.info('Authentication system initialized');
