@@ -101,8 +101,6 @@ COPY --from=deps-prod /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 
 # Copy necessary runtime files
-COPY shared ./shared
-COPY drizzle.config.ts ./
 COPY package*.json ./
 
 # Change ownership to non-root user
