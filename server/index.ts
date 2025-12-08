@@ -1,6 +1,7 @@
 import express from "express";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
 import { createProductionDependencies } from "./dependencies";
@@ -18,6 +19,39 @@ const app = express();
 app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok', timestamp: Date.now() });
 });
+
+// CORS configuration for split frontend/backend deployment
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').filter(Boolean) || [];
+
+// Warn if ALLOWED_ORIGINS not set in production (security consideration)
+if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
+  logger.warn('ALLOWED_ORIGINS not set in production - CORS will reject all cross-origin requests. Set ALLOWED_ORIGINS to your frontend URL(s).');
+}
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (same-origin, Postman, curl, etc.)
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+    // In development, allow all origins (Replit proxies, localhost variants)
+    if (process.env.NODE_ENV === 'development') {
+      callback(null, true);
+      return;
+    }
+    // In production, require explicit allowed origins
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      logger.warn(`CORS blocked origin: ${origin}`);
+      callback(null, false);
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 
 // Body parsing middleware
 app.use(express.json());
@@ -48,11 +82,13 @@ app.use(session({
   secret: sessionSecret || 'dev-only-insecure-secret-change-this',
   resave: false,
   saveUninitialized: false,
+  proxy: process.env.NODE_ENV === 'production',
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'lax', // Required for cross-origin requests in Replit proxy environment
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 24 * 60 * 60 * 1000,
+    domain: process.env.COOKIE_DOMAIN || undefined
   }
 }));
 
