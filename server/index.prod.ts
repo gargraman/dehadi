@@ -14,10 +14,28 @@ import { logger, requestLogger } from "./lib/logger";
 import { pool, ready } from "./db";
 import { seed } from "../db/seed";
 
+// Global error handlers to prevent silent crashes
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+  logger.error('Uncaught exception', { error: err.message, stack: err.stack });
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('UNHANDLED REJECTION at:', promise, 'reason:', reason);
+  logger.error('Unhandled rejection', { reason: String(reason) });
+});
+
 const app = express();
+
+// Logging middleware to see all incoming requests
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
 
 // Fast health check endpoint - responds immediately without any middleware
 app.get('/health', (_req, res) => {
+  console.log('Health check hit');
   res.status(200).json({ status: 'ok', timestamp: Date.now() });
 });
 
