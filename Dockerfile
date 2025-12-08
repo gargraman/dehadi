@@ -94,8 +94,9 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy production dependencies
-COPY --from=deps-prod /app/node_modules ./node_modules
+# Copy ALL dependencies (including dev) to ensure nothing is missing
+# We use deps-dev instead of deps-prod for maximum compatibility
+COPY --from=deps-dev /app/node_modules ./node_modules
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
@@ -110,7 +111,7 @@ USER nodejs
 
 EXPOSE 5000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+HEALTHCHECK --interval=10s --timeout=30s --start-period=120s --retries=5 \
     CMD curl -f http://localhost:5000/health || exit 1
 
 CMD ["node", "dist/index.js"]

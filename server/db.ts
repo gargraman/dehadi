@@ -38,7 +38,7 @@ async function init() {
   };
   
   // Add SSL configuration for Supabase (required) or other cloud providers
-  if (isSupabase || databaseUrl.includes('neon.tech')) {
+  if (isSupabase || databaseUrl!.includes('neon.tech')) {
     poolConfig.ssl = {
       rejectUnauthorized: false // Required for Supabase connection
     };
