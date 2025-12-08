@@ -1,9 +1,8 @@
 [build]
-builder = "NIXPACKS"
-buildCommand = "rm -rf node_modules package-lock.json && npm install && npm run build"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "npm run start"
 healthcheckPath = "/health"
 healthcheckTimeout = 60
 restartPolicyType = "ON_FAILURE"
