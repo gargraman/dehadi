@@ -45,7 +45,7 @@ API endpoints are configured in `lib/config/api_config.dart`:
 class ApiConfig {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:5000/api',
+    defaultValue: 'http://localhost:8080/api',
   );
 }
 ```
@@ -243,7 +243,7 @@ The app uses Razorpay for secure payments:
 ```dart
 // 1. Create Razorpay order
 final orderData = await ApiService.createRazorpayOrder(
-  amount: 50000,      // Amount in paise (₹500.00)
+  amount: 80800,      // Amount in paise (₹500.00)
   currency: 'INR',
 );
 
@@ -286,7 +286,7 @@ To enable payment UI:
    
    var options = {
      'key': 'YOUR_RAZORPAY_KEY',
-     'amount': 50000,
+     'amount': 80800,
      'name': 'HireConnect',
      'order_id': orderData['orderId'],
    };
@@ -317,10 +317,10 @@ To enable payment UI:
 4. **Run Flutter app** with backend URL:
    ```bash
    # For Android emulator
-   flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000/api
+   flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8080/api
    
    # For iOS simulator
-   flutter run --dart-define=API_BASE_URL=http://localhost:5000/api
+   flutter run --dart-define=API_BASE_URL=http://localhost:8080/api
    ```
 
 ### Hot Reload vs Hot Restart

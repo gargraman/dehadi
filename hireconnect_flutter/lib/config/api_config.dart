@@ -7,17 +7,17 @@ class ApiConfig {
   // Backend API URL configuration
   // 
   // Development options:
-  // - Local development: 'http://localhost:5000/api'
-  // - Android emulator: 'http://10.0.2.2:5000/api'
-  // - iOS simulator: 'http://localhost:5000/api'
-  // - Physical device: 'http://YOUR_COMPUTER_IP:5000/api'
+  // - Local development: 'http://localhost:8080/api'
+  // - Android emulator: 'http://10.0.2.2:8080/api'
+  // - iOS simulator: 'http://localhost:8080/api'
+  // - Physical device: 'http://YOUR_COMPUTER_IP:8080/api'
   // 
   // Production:
   // - Replit deployment: 'https://YOUR_REPLIT_APP.replit.app/api'
   // - Custom domain: 'https://your-domain.com/api'
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:5000/api',
+    defaultValue: 'http://localhost:8080/api',
   );
 
   // Feature flags

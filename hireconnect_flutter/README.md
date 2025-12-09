@@ -118,13 +118,13 @@ The app connects to the HireConnect backend API. You need to configure the backe
 
 ```bash
 # Local backend on computer
-flutter run --dart-define=API_BASE_URL=http://localhost:5000/api
+flutter run --dart-define=API_BASE_URL=http://localhost:8080/api
 
 # Android emulator (localhost on computer)
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000/api
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8080/api
 
 # Physical device on same network
-flutter run --dart-define=API_BASE_URL=http://192.168.1.100:5000/api
+flutter run --dart-define=API_BASE_URL=http://192.168.1.100:8080/api
 
 # Production Replit deployment
 flutter run --dart-define=API_BASE_URL=https://your-app.replit.app/api
@@ -141,7 +141,7 @@ flutter run --dart-define=API_BASE_URL=https://your-app.replit.app/api
       "request": "launch",
       "type": "dart",
       "args": [
-        "--dart-define=API_BASE_URL=http://10.0.2.2:5000/api",
+        "--dart-define=API_BASE_URL=http://10.0.2.2:8080/api",
         "--dart-define=ENABLE_DEBUG_LOGS=true"
       ]
     },
@@ -166,7 +166,7 @@ Edit `lib/config/api_config.dart` and change the `defaultValue`:
 ```dart
 static const String baseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'http://10.0.2.2:5000/api', // Change this
+  defaultValue: 'http://10.0.2.2:8080/api', // Change this
 );
 ```
 
@@ -176,9 +176,9 @@ static const String baseUrl = String.fromEnvironment(
 
 | Environment | Device Type | URL |
 |-------------|-------------|-----|
-| Local Dev | iOS Simulator | `http://localhost:5000/api` |
-| Local Dev | Android Emulator | `http://10.0.2.2:5000/api` |
-| Local Dev | Physical Device | `http://YOUR_COMPUTER_IP:5000/api` |
+| Local Dev | iOS Simulator | `http://localhost:8080/api` |
+| Local Dev | Android Emulator | `http://10.0.2.2:8080/api` |
+| Local Dev | Physical Device | `http://YOUR_COMPUTER_IP:8080/api` |
 | Production | Any | `https://your-app.replit.app/api` |
 
 **Finding your computer's IP**:
@@ -234,8 +234,8 @@ While the app is running, press:
    When the app starts, you'll see:
    ```
    === HireConnect API Configuration ===
-   Base URL: http://10.0.2.2:5000/api
-   Auth URL: http://10.0.2.2:5000/api/auth
+   Base URL: http://10.0.2.2:8080/api
+   Auth URL: http://10.0.2.2:8080/api/auth
    Debug Logs: true
    Request Timeout: 30s
    ====================================

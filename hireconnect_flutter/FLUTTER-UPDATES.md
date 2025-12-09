@@ -18,10 +18,10 @@ The HireConnect Flutter mobile application has been updated with a flexible API 
 **Usage**:
 ```bash
 # Local development
-flutter run --dart-define=API_BASE_URL=http://localhost:5000/api
+flutter run --dart-define=API_BASE_URL=http://localhost:8080/api
 
 # Android emulator
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000/api
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8080/api
 
 # Production
 flutter run --dart-define=API_BASE_URL=https://your-app.replit.app/api
@@ -85,18 +85,18 @@ flutter run --dart-define=API_BASE_URL=https://your-app.replit.app/api
 The new configuration system ensures consistent URL generation:
 
 **Auth Endpoints** (via `AuthService`):
-- `/register` → `http://localhost:5000/api/auth/register`
-- `/login` → `http://localhost:5000/api/auth/login`
-- `/me` → `http://localhost:5000/api/auth/me`
-- `/logout` → `http://localhost:5000/api/auth/logout`
-- `/status` → `http://localhost:5000/api/auth/status`
+- `/register` → `http://localhost:8080/api/auth/register`
+- `/login` → `http://localhost:8080/api/auth/login`
+- `/me` → `http://localhost:8080/api/auth/me`
+- `/logout` → `http://localhost:8080/api/auth/logout`
+- `/status` → `http://localhost:8080/api/auth/status`
 
 **API Endpoints** (via `ApiService`):
-- `/jobs` → `http://localhost:5000/api/jobs`
-- `/auth/me` → `http://localhost:5000/api/auth/me`
-- `/applications` → `http://localhost:5000/api/applications`
-- `/messages` → `http://localhost:5000/api/messages`
-- `/payments/create-order` → `http://localhost:5000/api/payments/create-order`
+- `/jobs` → `http://localhost:8080/api/jobs`
+- `/auth/me` → `http://localhost:8080/api/auth/me`
+- `/applications` → `http://localhost:8080/api/applications`
+- `/messages` → `http://localhost:8080/api/messages`
+- `/payments/create-order` → `http://localhost:8080/api/payments/create-order`
 
 ### Backend Schema Alignment
 
@@ -114,9 +114,9 @@ All Flutter models verified to match backend PostgreSQL schema:
 
 | Environment | Device | Backend URL |
 |------------|--------|-------------|
-| Local Dev | iOS Simulator | `http://localhost:5000/api` |
-| Local Dev | Android Emulator | `http://10.0.2.2:5000/api` |
-| Local Dev | Physical Device | `http://YOUR_COMPUTER_IP:5000/api` |
+| Local Dev | iOS Simulator | `http://localhost:8080/api` |
+| Local Dev | Android Emulator | `http://10.0.2.2:8080/api` |
+| Local Dev | Physical Device | `http://YOUR_COMPUTER_IP:8080/api` |
 | Production | Any | `https://your-app.replit.app/api` |
 
 ## Architect Review Status
@@ -146,10 +146,10 @@ npm run dev
 ### 3. Run Flutter App
 ```bash
 # For Android emulator
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000/api
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8080/api
 
 # For iOS simulator
-flutter run --dart-define=API_BASE_URL=http://localhost:5000/api
+flutter run --dart-define=API_BASE_URL=http://localhost:8080/api
 ```
 
 ### 4. Recommended Testing
