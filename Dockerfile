@@ -52,9 +52,6 @@ COPY db ./db
 # Build frontend and backend
 RUN npm run build
 
-# Create minimal test server for debugging
-RUN echo 'const e=require("express"),a=e(),p=process.env.PORT||8080;a.get("/health",(_,r)=>{console.log("health hit");r.json({status:"ok"})});a.get("/",(_,r)=>{console.log("root hit");r.send("Hello Railway!")});a.listen(p,"0.0.0.0",()=>console.log("Minimal server on "+p));' > dist/minimal.js
-
 # ----------------------------------------------------------------------------
 # Stage 5: Development Image
 # ----------------------------------------------------------------------------
@@ -116,5 +113,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=10s --timeout=30s --start-period=120s --retries=5 \
     CMD curl -f http://localhost:${PORT:-8080}/health || exit 1
 
-# Temporarily use minimal server for debugging
-CMD ["node", "dist/minimal.js"]
+# Run the production server
+CMD ["node", "dist/index.js"]
