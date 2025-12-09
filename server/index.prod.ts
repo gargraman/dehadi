@@ -14,6 +14,10 @@ import { logger, requestLogger } from "./lib/logger";
 import { pool, ready } from "./db";
 import { seed } from "../db/seed";
 
+// Track initialization state
+let isInitialized = false;
+let initError: string | null = null;
+
 // Global error handlers to prevent silent crashes
 process.on('uncaughtException', (err) => {
   console.error('UNCAUGHT EXCEPTION:', err);
@@ -33,10 +37,19 @@ app.use((req, res, next) => {
   next();
 });
 
-// Fast health check endpoint - responds immediately without any middleware
+// Health check endpoint - responds immediately, shows initialization status
+// This MUST respond 200 for Railway health checks even during initialization
 app.get('/health', (_req, res) => {
-  console.log('Health check hit');
-  res.status(200).json({ status: 'ok', timestamp: Date.now() });
+  console.log('Health check hit - initialized:', isInitialized);
+  if (initError) {
+    res.status(503).json({ status: 'error', error: initError, timestamp: Date.now() });
+  } else {
+    res.status(200).json({ 
+      status: isInitialized ? 'ok' : 'initializing', 
+      ready: isInitialized,
+      timestamp: Date.now() 
+    });
+  }
 });
 
 // CORS configuration for split frontend/backend deployment
@@ -106,7 +119,6 @@ app.use(session({
 
 // Static file serving for production
 function serveStatic(expressApp: express.Express) {
-  // Use fileURLToPath for ESM compatibility across Node.js versions
   const currentDir = path.dirname(new URL(import.meta.url).pathname);
   let distPath = path.resolve(currentDir, "public");
 
@@ -114,7 +126,6 @@ function serveStatic(expressApp: express.Express) {
   
   if (!fs.existsSync(distPath)) {
     console.error(`Static files not found at: ${distPath}`);
-    // Try alternative path
     const altPath = path.resolve(process.cwd(), "dist", "public");
     console.log(`Trying alternative path: ${altPath}`);
     if (fs.existsSync(altPath)) {
@@ -124,12 +135,9 @@ function serveStatic(expressApp: express.Express) {
     }
   }
 
-  // Serve static files
   expressApp.use(express.static(distPath));
   
-  // Catch-all for frontend routes ONLY (exclude /api and /health)
   expressApp.get("*", (req, res, next) => {
-    // Skip API routes and health check
     if (req.path.startsWith('/api') || req.path === '/health') {
       return next();
     }
@@ -137,66 +145,69 @@ function serveStatic(expressApp: express.Express) {
   });
 }
 
-(async () => {
-  try {
-    console.log('Starting server initialization...');
-    await ready;
-    console.log('Database ready');
-    logger.info('Database connection established');
+// START SERVER IMMEDIATELY - before any async initialization
+// This ensures Railway health checks can reach the server right away
+const port = parseInt(process.env.PORT || '8080', 10);
+const host = '0.0.0.0';
 
-    await seed();
-    console.log('Seeding complete');
-    
-    console.log('Creating dependencies...');
-    const dependencies = createProductionDependencies();
-    console.log('Dependencies created');
+console.log(`Starting server on ${host}:${port}...`);
 
-    console.log('Setting up authentication...');
-    setupAuthentication(app, dependencies.storage);
-    console.log('Authentication setup complete');
-    logger.info('Authentication system initialized');
-
-    console.log('Creating auth routes...');
-    app.use('/api/auth', createAuthRoutes(dependencies.storage));
-    console.log('Auth routes created');
-    logger.info('Authentication routes registered');
-
-    console.log('Registering application routes...');
-    await registerRoutes(app, dependencies);
-    console.log('Application routes registered');
-    logger.info('Application routes registered');
-
-    // Serve static files in production
-    console.log('Setting up static file serving...');
-    serveStatic(app);
-    console.log('Static file serving setup complete');
-
-    app.use(notFoundHandler);
-    app.use(errorHandler);
-
-    // Railway Docker deployments expect port 8080 by default
-    // (Railway injects PORT env var, but default to 8080 for Docker compatibility)
-    const port = parseInt(process.env.PORT || '8080', 10);
-    const host = '0.0.0.0';
-    
-    console.log(`Attempting to listen on ${host}:${port}...`);
-    
-    // Use Express's listen directly instead of HTTP server
-    const server = app.listen(port, host, () => {
-      console.log(`Server listening on ${host}:${port}`);
-      logger.info(`Server started successfully`, { port, host, environment: 'production' });
-    });
-    
-    server.on('error', (err: NodeJS.ErrnoException) => {
-      console.error('Server error:', err.message, err.code);
-      logger.error('Server error', { error: err.message, code: err.code });
-      process.exit(1);
-    });
-  } catch (error) {
+const server = app.listen(port, host, () => {
+  console.log(`Server listening on ${host}:${port} - beginning initialization...`);
+  
+  // Now do async initialization after server is listening
+  initializeApp().catch((error) => {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('Failed to start server:', errorMessage);
-    logger.error('Failed to start server', { error: errorMessage });
-    process.exit(1);
-  }
-})();
+    console.error('Initialization failed:', errorMessage);
+    initError = errorMessage;
+    logger.error('Failed to initialize server', { error: errorMessage });
+  });
+});
 
+server.on('error', (err: NodeJS.ErrnoException) => {
+  console.error('Server error:', err.message, err.code);
+  logger.error('Server error', { error: err.message, code: err.code });
+  process.exit(1);
+});
+
+// Async initialization function
+async function initializeApp() {
+  console.log('Starting async initialization...');
+  
+  await ready;
+  console.log('Database ready');
+  logger.info('Database connection established');
+
+  await seed();
+  console.log('Seeding complete');
+  
+  console.log('Creating dependencies...');
+  const dependencies = createProductionDependencies();
+  console.log('Dependencies created');
+
+  console.log('Setting up authentication...');
+  setupAuthentication(app, dependencies.storage);
+  console.log('Authentication setup complete');
+  logger.info('Authentication system initialized');
+
+  console.log('Creating auth routes...');
+  app.use('/api/auth', createAuthRoutes(dependencies.storage));
+  console.log('Auth routes created');
+  logger.info('Authentication routes registered');
+
+  console.log('Registering application routes...');
+  await registerRoutes(app, dependencies);
+  console.log('Application routes registered');
+  logger.info('Application routes registered');
+
+  console.log('Setting up static file serving...');
+  serveStatic(app);
+  console.log('Static file serving setup complete');
+
+  app.use(notFoundHandler);
+  app.use(errorHandler);
+
+  isInitialized = true;
+  console.log('=== SERVER FULLY INITIALIZED ===');
+  logger.info('Server fully initialized', { port, host, environment: 'production' });
+}
