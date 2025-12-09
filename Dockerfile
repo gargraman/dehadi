@@ -113,4 +113,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=10s --timeout=30s --start-period=120s --retries=5 \
     CMD curl -f http://localhost:${PORT:-8080}/health || exit 1
 
-CMD ["node", "dist/index.js"]
+# Temporarily use minimal server for debugging
+CMD ["npx", "tsx", "server/index.minimal.ts"]

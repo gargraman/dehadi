@@ -603,3 +603,9 @@
 {"environment":"development","level":"info","message":"Authentication routes registered","service":"hireconnect","timestamp":"2025-12-08 14:44:47"}
 {"environment":"development","level":"info","message":"Application routes registered","service":"hireconnect","timestamp":"2025-12-08 14:44:47"}
 {"environment":"development","host":"0.0.0.0","level":"info","message":"Server started successfully","port":5000,"service":"hireconnect","timestamp":"2025-12-08 14:44:49"}
+{"environment":"development","level":"info","message":"Database already seeded, skipping...","service":"hireconnect","timestamp":"2025-12-09 04:16:35"}
+{"environment":"development","level":"info","message":"Passport authentication configured","service":"hireconnect","timestamp":"2025-12-09 04:16:35"}
+{"environment":"development","level":"info","message":"Authentication system initialized","service":"hireconnect","timestamp":"2025-12-09 04:16:35"}
+{"environment":"development","level":"info","message":"Authentication routes registered","service":"hireconnect","timestamp":"2025-12-09 04:16:35"}
+{"environment":"development","level":"info","message":"Application routes registered","service":"hireconnect","timestamp":"2025-12-09 04:16:35"}
+{"environment":"development","host":"0.0.0.0","level":"info","message":"Server started successfully","port":5000,"service":"hireconnect","timestamp":"2025-12-09 04:16:37"}
