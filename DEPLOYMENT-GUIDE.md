@@ -62,7 +62,7 @@ run = ["npm", "run", "start"]
 
 2. **Run Phase:**
    - `npm run start` executes
-   - Server starts on port 5000
+   - Server starts on port 8080
    - Server binds to `0.0.0.0` (required for production)
    - Database migrations run automatically
 

@@ -138,7 +138,7 @@ curl https://your-project.up.railway.app/api/jobs
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `NODE_ENV` | Yes | Set to `production` |
-| `PORT` | Yes | `5000` |
+| `PORT` | Yes | `8080` |
 | `SUPABASE_DATABASE_URL` | Yes | Supabase PostgreSQL connection |
 | `SESSION_SECRET` | Yes | 32+ character secret |
 | `ALLOWED_ORIGINS` | **Yes** | Vercel frontend URL (REQUIRED for security - without this, all cross-origin requests will be blocked) |

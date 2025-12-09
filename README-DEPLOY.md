@@ -92,8 +92,8 @@ npm run db:push
 npm run dev
 
 # Access application
-# Frontend: http://localhost:5000
-# Backend API: http://localhost:5000/api
+# Frontend: http://localhost:8080
+# Backend API: http://localhost:8080/api
 ```
 
 ---
@@ -115,7 +115,7 @@ docker-compose up -d
 docker-compose logs -f app
 
 # 5. Access application
-# App: http://localhost:5000
+# App: http://localhost:8080
 # pgAdmin: http://localhost:5050 (with --profile tools)
 ```
 
@@ -152,7 +152,7 @@ docker-compose down -v
 
 #### 3. Access Services
 
-- **Application**: http://localhost:5000
+- **Application**: http://localhost:8080
 - **PostgreSQL**: localhost:5432 (credentials from .env)
 - **pgAdmin** (optional): http://localhost:5050
 
@@ -186,7 +186,7 @@ docker push your-registry.com/dehadi-app:1.0.0
 docker pull your-registry.com/dehadi-app:1.0.0
 docker run -d \
   --name dehadi-app \
-  -p 5000:5000 \
+  -p 8080:8080 \
   --env-file .env.production \
   your-registry.com/dehadi-app:1.0.0
 ```
@@ -364,7 +364,7 @@ Create `ecs-task-definition.json`:
       "image": "<ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/dehadi-app:latest",
       "portMappings": [
         {
-          "containerPort": 5000,
+          "containerPort": 8080,
           "protocol": "tcp"
         }
       ],
@@ -376,7 +376,7 @@ Create `ecs-task-definition.json`:
         },
         {
           "name": "PORT",
-          "value": "5000"
+          "value": "8080"
         }
       ],
       "secrets": [
@@ -406,7 +406,7 @@ Create `ecs-task-definition.json`:
         }
       },
       "healthCheck": {
-        "command": ["CMD-SHELL", "node -e \"require('http').get('http://localhost:5000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})\""],
+        "command": ["CMD-SHELL", "node -e \"require('http').get('http://localhost:8080/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})\""],
         "interval": 30,
         "timeout": 5,
         "retries": 3,
@@ -447,7 +447,7 @@ aws elbv2 create-load-balancer \
 aws elbv2 create-target-group \
   --name dehadi-tg \
   --protocol HTTP \
-  --port 5000 \
+  --port 8080 \
   --vpc-id vpc-xxxxxxx \
   --target-type ip \
   --health-check-path /api/health \
@@ -473,7 +473,7 @@ aws ecs create-service \
   --desired-count 2 \
   --launch-type FARGATE \
   --network-configuration "awsvpcConfiguration={subnets=[subnet-xxxxx,subnet-yyyyy],securityGroups=[sg-xxxxxxx],assignPublicIp=ENABLED}" \
-  --load-balancers targetGroupArn=<TARGET_GROUP_ARN>,containerName=dehadi-app,containerPort=5000 \
+  --load-balancers targetGroupArn=<TARGET_GROUP_ARN>,containerName=dehadi-app,containerPort=8080 \
   --region ap-south-1
 
 # Check service status
@@ -599,7 +599,7 @@ server {
     server_name dehadi.co.in www.dehadi.co.in;
 
     location / {
-        proxy_pass http://localhost:5000;
+        proxy_pass http://localhost:8080;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -641,7 +641,7 @@ sudo certbot --nginx -d dehadi.co.in -d www.dehadi.co.in
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `PORT` | Application port | `5000` |
+| `PORT` | Application port | `8080` |
 | `OPENAI_API_KEY` | OpenAI API key | None |
 | `DEFAULT_OBJECT_STORAGE_BUCKET_ID` | S3/Object storage bucket | None |
 
@@ -689,10 +689,10 @@ docker-compose restart
 
 **Port already in use:**
 ```bash
-# Find process using port 5000
-lsof -i :5000
+# Find process using port 8080
+lsof -i :8080
 # Or on Linux
-sudo netstat -tulpn | grep 5000
+sudo netstat -tulpn | grep 8080
 
 # Kill process
 kill -9 <PID>

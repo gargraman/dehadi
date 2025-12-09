@@ -88,8 +88,8 @@ npm run db:push
 ```bash
 npm run dev
 ```
-- Frontend: http://localhost:5000
-- Backend API: http://localhost:5000/api
+- Frontend: http://localhost:8080
+- Backend API: http://localhost:8080/api
 
 ## 🐳 Docker Deployment
 
@@ -105,8 +105,8 @@ cp .env.example .env
 docker-compose up -d
 
 # Access application
-# App: http://localhost:5000
-# pgAdmin (optional): http://localhost:5000 (with --profile tools)
+# App: http://localhost:8080
+# pgAdmin (optional): http://localhost:8080 (with --profile tools)
 ```
 
 ## 📊 API Endpoints
@@ -221,7 +221,7 @@ For detailed deployment instructions, refer to the `README-DEPLOY.md` file.
 - `NODE_ENV` - Environment (`production` or `development`)
 
 **Optional Variables:**
-- `PORT` - Application port (default: 5000)
+- `PORT` - Application port (default: 8080)
 - `OPENAI_API_KEY` - OpenAI API key
 - `DEFAULT_OBJECT_STORAGE_BUCKET_ID` - S3/Object storage bucket
 
