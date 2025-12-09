@@ -49,11 +49,11 @@ In Railway dashboard, go to your project → **Variables** tab and add:
 | Variable | Value | Description |
 |----------|-------|-------------|
 | `NODE_ENV` | `production` | Production mode |
-| `PORT` | `5000` | Server port (Railway auto-assigns but we specify) |
 | `SUPABASE_DATABASE_URL` | `postgresql://postgres.xxx:password@aws-1-xxx.pooler.supabase.com:5432/postgres` | Your Supabase connection string |
-| `SESSION_SECRET` | `your-secure-32-char-secret-here` | Generate a secure random string |
+| `SESSION_SECRET` | `your-secure-32-char-secret-here` | Generate a secure random string (32+ chars) |
 | `ALLOWED_ORIGINS` | `https://your-app.vercel.app` | Your Vercel frontend URL (add after Vercel deploy) |
-| `COOKIE_DOMAIN` | (leave empty or set to shared domain if using custom domain) | Cookie domain for cross-site |
+
+**IMPORTANT: Do NOT set the `PORT` variable.** Railway automatically assigns and injects PORT. The app will use `process.env.PORT` which Railway provides.
 
 ### 2.4 Generate Settings
 Railway will use the `railway.toml` configuration:
@@ -154,22 +154,35 @@ curl https://your-project.up.railway.app/api/jobs
 
 ## Troubleshooting
 
+### 502 Bad Gateway Errors
+This is the most common Railway issue. Check these in order:
+
+1. **Do NOT set PORT manually** - Railway auto-assigns PORT. Delete any PORT variable you've set.
+2. **Check Deploy Logs** - Look for "Server listening on 0.0.0.0:XXXX" message
+3. **Verify environment variables** - Missing `SUPABASE_DATABASE_URL` or `SESSION_SECRET` will crash the app
+4. **Health check** - The server must respond to `/health` within 120 seconds of startup
+5. **Check for startup errors** - Look for database connection or module import errors
+
 ### CORS Errors
 - Ensure `ALLOWED_ORIGINS` includes your exact Vercel URL (with https://)
 - Check there are no trailing slashes
+- Multiple origins: separate with commas (no spaces): `https://app1.vercel.app,https://app2.vercel.app`
 
 ### Login Not Working
-- Verify `SESSION_SECRET` is set in Railway
+- Verify `SESSION_SECRET` is set in Railway (32+ characters)
 - Ensure cookies are enabled in browser
 - Check `ALLOWED_ORIGINS` is correctly configured
+- Cross-site cookies require `sameSite: 'none'` and `secure: true` (already configured)
 
 ### Database Connection Errors
 - Verify `SUPABASE_DATABASE_URL` uses the pooler connection (not direct)
 - Format: `postgresql://postgres.PROJECT_ID:PASSWORD@aws-1-REGION.pooler.supabase.com:5432/postgres`
+- Session pooler port is 5432, transaction pooler is 6543
 
 ### Build Failures
 - Check Railway logs for specific errors
 - Ensure all dependencies are in `package.json`
+- The Docker build uses `node:20-bullseye-slim` (not Alpine) for Rollup compatibility
 
 ---
 
@@ -211,3 +224,53 @@ When you outgrow free tiers:
 - **Supabase Pro**: $25/month for more storage
 
 Consider Replit Deployments (~$7/month) as an all-in-one alternative.
+
+---
+
+## Alternative Deployment Options
+
+If Railway continues to have issues, consider these alternatives:
+
+### Option 1: Render (Recommended Alternative)
+**Free tier**: 750 hours/month (enough for always-on small app)
+
+1. Go to [render.com](https://render.com) and sign up
+2. Create **New Web Service** → Connect GitHub repo
+3. Configure:
+   - **Build Command**: `npm run build`
+   - **Start Command**: `node dist/index.js`
+   - **Environment**: Add same env vars as Railway
+4. Render auto-detects Node.js and deploys
+
+**Pros**: Better free tier, simpler setup, no Docker required
+**Cons**: Cold starts on free tier (sleeps after 15 min inactivity)
+
+### Option 2: Fly.io
+**Free tier**: 3 shared VMs, 160GB bandwidth
+
+1. Install Fly CLI: `curl -L https://fly.io/install.sh | sh`
+2. Create app: `fly launch` (uses existing Dockerfile)
+3. Set secrets: `fly secrets set SUPABASE_DATABASE_URL=... SESSION_SECRET=...`
+4. Deploy: `fly deploy`
+
+**Pros**: Global edge deployment, always-on
+**Cons**: Steeper learning curve, credit card required
+
+### Option 3: Replit Deployments
+**Cost**: ~$7/month for always-on Reserved VM
+
+1. Already on Replit - use built-in deployment
+2. Configure deploy workflow in Replit
+3. Uses same codebase, no migration needed
+
+**Pros**: Simplest option, all-in-one platform
+**Cons**: Costs money from day 1
+
+### Quick Comparison
+
+| Platform | Free Tier | Cold Starts | Docker | Difficulty |
+|----------|-----------|-------------|--------|------------|
+| Railway | $5 credits/month | No | Yes | Medium |
+| Render | 750 hrs/month | Yes (15 min) | Optional | Easy |
+| Fly.io | 3 VMs | No | Yes | Hard |
+| Replit | None | No | No | Easy |
