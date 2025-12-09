@@ -18,7 +18,13 @@ import {
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq, and, or, desc, ne, isNull, sql } from "drizzle-orm";
+import type { PgTransaction } from "drizzle-orm/pg-core";
+import type { ExtractTablesWithRelations } from "drizzle-orm";
+import type { PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { logger } from "./lib/logger";
+
+// Type alias for database transaction
+type DbTransaction = PgTransaction<PgQueryResultHKT, Record<string, never>, Record<string, never>>;
 
 // Haversine formula to calculate distance between two points (in km)
 function calculateHaversineDistance(
@@ -498,7 +504,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (filters?.location) {
-      result = result.filter(job => job.location.includes(filters.location!));
+      result = result.filter((job: Job) => job.location.includes(filters.location!));
     }
 
     return result;
@@ -560,7 +566,7 @@ export class DatabaseStorage implements IStorage {
   async assignWorkerToJob(jobId: string, workerId: string): Promise<Job | undefined> {
     try {
       // Use transaction to ensure atomicity and prevent race conditions
-      const result = await this.db.transaction(async (tx) => {
+      const result = await this.db.transaction(async (tx: DbTransaction) => {
         // First, check if job is still available for assignment
         const [job] = await tx.select().from(jobs).where(eq(jobs.id, jobId)).limit(1);
 
@@ -625,7 +631,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(jobApplications.jobId, jobId))
       .orderBy(desc(jobApplications.createdAt));
 
-    return results.map(row => ({
+    return results.map((row: any): EnrichedJobApplication => ({
       id: row.id,
       jobId: row.jobId,
       workerId: row.workerId,
@@ -654,7 +660,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(jobApplications.workerId, workerId))
       .orderBy(desc(jobApplications.createdAt));
 
-    return results.map(row => ({
+    return results.map((row: any): EnrichedJobApplication => ({
       id: row.id,
       jobId: row.jobId,
       workerId: row.workerId,
@@ -765,7 +771,7 @@ export class DatabaseStorage implements IStorage {
   ): Promise<{ payment: Payment; job: Job } | null> {
     try {
       // Use database transaction to ensure atomicity
-      const result = await this.db.transaction(async (tx) => {
+      const result = await this.db.transaction(async (tx: DbTransaction) => {
         // First, verify job is in correct state
         const [job] = await tx.select().from(jobs).where(eq(jobs.id, jobId)).limit(1);
         if (!job || job.status !== "awaiting_payment") {
@@ -814,7 +820,7 @@ export class DatabaseStorage implements IStorage {
   ): Promise<{ application: JobApplication; job: Job } | null> {
     try {
       // Use database transaction to ensure atomicity
-      const result = await this.db.transaction(async (tx) => {
+      const result = await this.db.transaction(async (tx: DbTransaction) => {
         // First, verify application and job are in correct state
         const [application] = await tx.select().from(jobApplications).where(eq(jobApplications.id, applicationId)).limit(1);
         const [job] = await tx.select().from(jobs).where(eq(jobs.id, jobId)).limit(1);

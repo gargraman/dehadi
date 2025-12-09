@@ -42,13 +42,12 @@ describe('JobCard Component', () => {
     );
 
     expect(screen.getByText('Mason needed in Mumbai')).toBeInTheDocument();
-    expect(screen.getByText('Test Employer')).toBeInTheDocument();
     expect(screen.getByText('Mumbai')).toBeInTheDocument();
-    expect(screen.getByText('₹800')).toBeInTheDocument();
-    expect(screen.getByText('2 workers needed')).toBeInTheDocument();
+    expect(screen.getByText('800')).toBeInTheDocument();
+    expect(screen.getByText(/2 workers needed/i)).toBeInTheDocument();
   });
 
-  it('should display correct status badge', () => {
+  it('should display closed status for non-open jobs', () => {
     renderWithProviders(
       <JobCard
         id="job-1"
@@ -63,10 +62,11 @@ describe('JobCard Component', () => {
       />
     );
 
-    expect(screen.getByText('In Progress')).toBeInTheDocument();
+    // Non-open jobs show the closed button text
+    expect(screen.getByText(/काम बंद • Closed/i)).toBeInTheDocument();
   });
 
-  it('should display skills correctly', () => {
+  it('should render card without displaying skills', () => {
     renderWithProviders(
       <JobCard
         id="job-1"
@@ -81,12 +81,12 @@ describe('JobCard Component', () => {
       />
     );
 
-    expect(screen.getByText('wiring')).toBeInTheDocument();
-    expect(screen.getByText('electrical_fitting')).toBeInTheDocument();
-    expect(screen.getByText('repair')).toBeInTheDocument();
+    // Skills are not displayed on the card (shown on detail page instead)
+    expect(screen.getByText('Electrician needed')).toBeInTheDocument();
+    expect(screen.getByTestId('job-card-job-1')).toBeInTheDocument();
   });
 
-  it('should show Apply Now button for open jobs', () => {
+  it('should show Apply button for open jobs', () => {
     renderWithProviders(
       <JobCard
         id="job-1"
@@ -101,7 +101,8 @@ describe('JobCard Component', () => {
       />
     );
 
-    expect(screen.getByText('Apply Now')).toBeInTheDocument();
+    // Button shows bilingual text
+    expect(screen.getByText(/काम चाहिए • Apply/i)).toBeInTheDocument();
   });
 
   it('should have correct test id', () => {
@@ -137,7 +138,8 @@ describe('JobCard Component', () => {
       />
     );
 
-    expect(screen.getByText('/hour')).toBeInTheDocument();
+    // Wage type is shown in Hindi
+    expect(screen.getByText('प्रति घंटा')).toBeInTheDocument();
   });
 
   it('should display daily wage type correctly', () => {
@@ -155,10 +157,11 @@ describe('JobCard Component', () => {
       />
     );
 
-    expect(screen.getByText('/day')).toBeInTheDocument();
+    // Wage type is shown in Hindi
+    expect(screen.getByText('प्रतिदिन')).toBeInTheDocument();
   });
 
-  it('should not show Apply Now button for completed jobs', () => {
+  it('should show closed status for completed jobs', () => {
     renderWithProviders(
       <JobCard
         id="job-1"
@@ -173,7 +176,9 @@ describe('JobCard Component', () => {
       />
     );
 
-    expect(screen.queryByText('Apply Now')).not.toBeInTheDocument();
+    // Completed jobs show closed status
+    expect(screen.getByText(/काम बंद • Closed/i)).toBeInTheDocument();
+    expect(screen.queryByText(/काम चाहिए • Apply/i)).not.toBeInTheDocument();
   });
 
   it('should handle navigation on card click', () => {

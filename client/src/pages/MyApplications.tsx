@@ -77,7 +77,7 @@ export default function MyApplications() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(-1)}
+            onClick={() => window.history.back()}
             className="h-10 w-10"
           >
             <ArrowLeft />

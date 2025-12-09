@@ -123,7 +123,7 @@ export default function MyJobs() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(-1)}
+            onClick={() => window.history.back()}
             className="h-10 w-10"
           >
             <ArrowLeft />
@@ -269,11 +269,11 @@ export default function MyJobs() {
                       title={job.title}
                       employer="You"
                       location={job.location}
-                      wageType={job.wageType}
+                      wageType={job.wageType as 'daily' | 'hourly' | 'fixed'}
                       wage={job.wage.toString()}
                       skills={job.skills || []}
                       postedTime={new Date(job.createdAt).toLocaleDateString()}
-                      headcount={job.headcount}
+                      headcount={job.headcount ?? undefined}
                       status={job.status}
                     />
 
@@ -367,11 +367,11 @@ export default function MyJobs() {
                       title={job.title}
                       employer="You"
                       location={job.location}
-                      wageType={job.wageType}
+                      wageType={job.wageType as 'daily' | 'hourly' | 'fixed'}
                       wage={job.wage.toString()}
                       skills={job.skills || []}
                       postedTime={new Date(job.createdAt).toLocaleDateString()}
-                      headcount={job.headcount}
+                      headcount={job.headcount ?? undefined}
                       status={job.status}
                     />
                   </div>
@@ -400,11 +400,11 @@ export default function MyJobs() {
                       title={job.title}
                       employer="You"
                       location={job.location}
-                      wageType={job.wageType}
+                      wageType={job.wageType as 'daily' | 'hourly' | 'fixed'}
                       wage={job.wage.toString()}
                       skills={job.skills || []}
                       postedTime={new Date(job.createdAt).toLocaleDateString()}
-                      headcount={job.headcount}
+                      headcount={job.headcount ?? undefined}
                       status={job.status}
                     />
                   </div>
@@ -433,11 +433,11 @@ export default function MyJobs() {
                       title={job.title}
                       employer="You"
                       location={job.location}
-                      wageType={job.wageType}
+                      wageType={job.wageType as 'daily' | 'hourly' | 'fixed'}
                       wage={job.wage.toString()}
                       skills={job.skills || []}
                       postedTime={new Date(job.createdAt).toLocaleDateString()}
-                      headcount={job.headcount}
+                      headcount={job.headcount ?? undefined}
                       status={job.status}
                     />
                   </div>
@@ -466,11 +466,11 @@ export default function MyJobs() {
                       title={job.title}
                       employer="You"
                       location={job.location}
-                      wageType={job.wageType}
+                      wageType={job.wageType as 'daily' | 'hourly' | 'fixed'}
                       wage={job.wage.toString()}
                       skills={job.skills || []}
                       postedTime={new Date(job.createdAt).toLocaleDateString()}
-                      headcount={job.headcount}
+                      headcount={job.headcount ?? undefined}
                       status={job.status}
                     />
                   </div>

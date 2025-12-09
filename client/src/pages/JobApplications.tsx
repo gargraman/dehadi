@@ -15,7 +15,7 @@ export default function JobApplications() {
   const [, navigate] = useLocation();
   const { user } = useAuth();
 
-  const jobId = params?.jobId;
+  const jobId = params?.jobId ?? null;
   const { data: job, isLoading: isLoadingJob } = useJob(jobId);
   const { data: applications = [], isLoading: isLoadingApplications, error } = useJobApplications(jobId);
 
@@ -139,11 +139,11 @@ export default function JobApplications() {
               title={job.title}
               employer="You"
               location={job.location}
-              wageType={job.wageType}
+              wageType={job.wageType as 'daily' | 'hourly' | 'fixed'}
               wage={job.wage.toString()}
               skills={job.skills || []}
               postedTime={new Date(job.createdAt).toLocaleDateString()}
-              headcount={job.headcount}
+              headcount={job.headcount ?? undefined}
               status={job.status}
             />
           </CardContent>
