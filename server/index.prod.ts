@@ -200,12 +200,3 @@ function serveStatic(expressApp: express.Express) {
   }
 })();
 
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught exception', { error: error.message });
-  process.exit(1);
-});
-
-process.on('unhandledRejection', (reason) => {
-  logger.error('Unhandled rejection', { reason: String(reason) });
-  process.exit(1);
-});

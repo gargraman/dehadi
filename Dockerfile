@@ -93,6 +93,7 @@ RUN groupadd --gid 1001 nodejs && useradd --uid 1001 --gid nodejs --shell /bin/b
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV PORT=8080
 
 # Copy production dependencies only (prod entry point has no Vite references)
 COPY --from=deps-prod /app/node_modules ./node_modules
