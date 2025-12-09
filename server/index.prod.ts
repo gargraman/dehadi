@@ -174,8 +174,9 @@ function serveStatic(expressApp: express.Express) {
     app.use(notFoundHandler);
     app.use(errorHandler);
 
-    // Railway provides PORT - use it directly
-    const port = parseInt(process.env.PORT || '5000', 10);
+    // Railway Docker deployments expect port 8080 by default
+    // (Railway injects PORT env var, but default to 8080 for Docker compatibility)
+    const port = parseInt(process.env.PORT || '8080', 10);
     const host = '0.0.0.0';
     
     console.log(`Attempting to listen on ${host}:${port}...`);
