@@ -77,6 +77,21 @@ export class DevMockPaymentClient implements IPaymentClient {
 }
 
 /**
+ * Disabled payment client that returns 503 errors for all operations
+ * Used when Razorpay keys are not configured in production
+ */
+export class DisabledPaymentClient implements IPaymentClient {
+  orders = {
+    create: async (_params: { amount: number; currency: string; receipt?: string }) => {
+      throw new Error('PAYMENT_DISABLED: Razorpay keys not configured. Contact administrator.');
+    }
+  };
+}
+
+// Track whether payments are enabled globally
+export let paymentsEnabled = false;
+
+/**
  * Factory function to create production dependencies
  */
 export function createProductionDependencies(): IDependencies {
@@ -84,17 +99,29 @@ export function createProductionDependencies(): IDependencies {
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
   const nodeEnv = process.env.NODE_ENV;
 
-  // In production, require real Razorpay keys
-  if (nodeEnv === 'production' && (!keyId || !keySecret)) {
-    throw new Error("RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET must be set in production");
-  }
-
   // Check if we have placeholder/test keys (common in development)
   const hasPlaceholderKeys = keyId === 'your_razorpay_key_id' || keySecret === 'your_razorpay_key_secret';
+  const hasValidKeys = keyId && keySecret && !hasPlaceholderKeys;
 
-  // Use mock client in development when keys are missing or are placeholders
-  if (nodeEnv !== 'production' && (!keyId || !keySecret || hasPlaceholderKeys)) {
+  // In production without valid keys: use disabled client that returns errors
+  if (nodeEnv === 'production' && !hasValidKeys) {
+    console.warn('⚠️ WARNING: Running in production without Razorpay keys.');
+    console.warn('⚠️ Payment endpoints will return 503 errors until RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are configured.');
+    paymentsEnabled = false;
+    return {
+      storage: new DatabaseStorage(),
+      paymentClient: new DisabledPaymentClient(),
+      paymentConfig: {
+        keyId: '',
+        keySecret: '',
+      },
+    };
+  }
+
+  // In development without keys: use mock client for testing
+  if (!hasValidKeys) {
     console.log('🔧 Development mode: Using mock payment client (Razorpay keys not configured)');
+    paymentsEnabled = true; // Mock payments work in dev
     return {
       storage: new DatabaseStorage(),
       paymentClient: new DevMockPaymentClient(),
@@ -106,6 +133,8 @@ export function createProductionDependencies(): IDependencies {
   }
 
   // Use real Razorpay client when keys are properly configured
+  console.log('✓ Razorpay payment integration enabled');
+  paymentsEnabled = true;
   return {
     storage: new DatabaseStorage(),
     paymentClient: new RazorpayClient(keyId, keySecret),
